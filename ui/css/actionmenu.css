@@ -8,19 +8,21 @@
   justify-content: center;
   /* Square, and no wider than the glyph: this button is the whole width of a
    * column that carries no data. */
-  width: 1.75rem;
-  height: 1.75rem;
+  width: 2rem;
+  height: 2rem;
+  /* An in-row control, so it sits below the 40px icon button the system uses
+   * at page level — a row of them would otherwise set the row height. */
+  min-height: 0;
   padding: 0;
-  color: var(--gomu-color-text-muted);
+  color: var(--gomu-color-heading);
   background: transparent;
   border-color: transparent;
+  border-radius: var(--gomu-radius-full);
 }
 
 .gomu-action-trigger:hover:not(:disabled),
 .gomu-action-trigger[aria-expanded="true"] {
-  color: var(--gomu-color-text);
   background: var(--gomu-color-surface);
-  border-color: var(--gomu-color-border);
 }
 
 .gomu-action-trigger:disabled {
@@ -40,7 +42,7 @@
 }
 
 .gomu-action-item {
-  padding: calc(var(--gomu-space-unit) * 1.5) calc(var(--gomu-space-unit) * 2.5);
+  padding: calc(var(--gomu-space-unit) * 2.5) calc(var(--gomu-space-unit) * 3);
   border-radius: var(--gomu-radius-s);
   white-space: nowrap;
   cursor: pointer;

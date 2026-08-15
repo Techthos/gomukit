@@ -1,8 +1,8 @@
 .gomu-form {
-  padding: calc(var(--gomu-space-unit) * 4);
+  padding: calc(var(--gomu-space-unit) * 6);
   display: flex;
   flex-direction: column;
-  gap: calc(var(--gomu-space-unit) * 3.5);
+  gap: calc(var(--gomu-space-unit) * 4);
   /* A reading measure for one column of controls; the multi-column tiers
    * below widen it, since four columns at 36rem are four unusable ones. */
   max-width: var(--gomu-form-max, 36rem);
@@ -34,7 +34,7 @@
 .gomu-form-grid {
   display: grid;
   grid-template-columns: repeat(var(--gomu-form-cols, 1), minmax(0, 1fr));
-  gap: calc(var(--gomu-space-unit) * 3.5) calc(var(--gomu-space-unit) * 4);
+  gap: calc(var(--gomu-space-unit) * 4);
   align-items: start;
 }
 
@@ -74,7 +74,7 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: calc(var(--gomu-space-unit) * 3.5);
+  gap: calc(var(--gomu-space-unit) * 4);
 }
 
 /* Groups need more air between them than fields do inside one, or the last
@@ -96,33 +96,33 @@
  * work of saying so. */
 .gomu-fieldset-title {
   margin: 0;
-  font-size: 0.875rem;
+  font-size: var(--gomu-text-body);
   font-weight: 600;
-  letter-spacing: 0.01em;
+  color: var(--gomu-color-heading);
 }
 
 .gomu-fieldset-desc {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: var(--gomu-text-caption);
   color: var(--gomu-color-text-muted);
 }
 
-/* The boxed variant: the same chrome the widget card wears — a filled header
- * strip over a bordered body — one level in. */
+/* The boxed variant: a cream tile around the group, like every other card in
+ * the system — no border, no shadow, the fill does the grouping. */
 .gomu-fieldset--boxed {
   gap: 0;
-  border: 1px solid var(--gomu-color-border);
   border-radius: var(--gomu-radius-m);
+  background: var(--gomu-color-surface);
   overflow: hidden;
 }
 
 .gomu-fieldset--boxed .gomu-fieldset-head {
-  padding: calc(var(--gomu-space-unit) * 2.5) calc(var(--gomu-space-unit) * 3.5);
-  background: var(--gomu-color-surface);
+  padding: calc(var(--gomu-space-unit) * 4) calc(var(--gomu-space-unit) * 4) 0;
+  border-block-end: 0;
 }
 
 .gomu-fieldset--boxed .gomu-form-grid {
-  padding: calc(var(--gomu-space-unit) * 3.5);
+  padding: calc(var(--gomu-space-unit) * 4);
 }
 
 /* --- Fields ----------------------------------------------------------- */
@@ -137,8 +137,9 @@
 }
 
 .gomu-field label {
-  font-size: 0.8125rem;
-  font-weight: 500;
+  font-size: var(--gomu-text-body);
+  font-weight: 600;
+  color: var(--gomu-color-heading);
 }
 
 /* The control fills the column it was given rather than sitting at its
@@ -166,18 +167,19 @@
 
 .gomu-field-desc {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: var(--gomu-text-sm);
   color: var(--gomu-color-text-muted);
 }
 
 .gomu-field-error {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: var(--gomu-text-sm);
   color: var(--gomu-color-danger);
 }
 
 .gomu-input[aria-invalid="true"] {
   border-color: var(--gomu-color-danger);
+  border-width: 2px;
 }
 
 .gomu-input[readonly] {
@@ -209,7 +211,7 @@
 
 @container gomu (max-width: 34rem) {
   .gomu-form {
-    padding: calc(var(--gomu-space-unit) * 3);
+    padding: calc(var(--gomu-space-unit) * 4);
   }
 
   /* One column, and with it no spans: a field that asked for two of two is

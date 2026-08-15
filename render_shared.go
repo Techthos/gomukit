@@ -15,8 +15,9 @@ import (
 // It is the last element of every widget, and its bar keeps its height whether
 // or not a message is showing, so the widget does not resize (and the host
 // iframe does not jump) when work starts or finishes.
-func statusNode() g.Node {
+func statusNode(b *Brand) g.Node {
 	return h.Div(h.Class("gomu-statusbar"),
+		brandNode(b),
 		h.Div(h.Class("gomu-status"), htmlx.Data("status", ""), g.Attr("hidden"), h.Aria("live", "polite")),
 	)
 }
@@ -49,11 +50,41 @@ func paginationNode(sizes []int, current int) g.Node {
 		nodes = append(nodes, pageSizeNode(sizes, current))
 	}
 	nodes = append(nodes,
-		h.Button(h.Type("button"), h.Class("gomu-btn"), htmlx.Data("page", "prev"), g.Text("Previous")),
+		pagerButton("prev", "Previous page", "M10 4 6 8 10 12"),
 		h.Span(h.Class("gomu-page-info"), htmlx.Data("page-info", "")),
-		h.Button(h.Type("button"), h.Class("gomu-btn"), htmlx.Data("page", "next"), g.Text("Next")),
+		pagerButton("next", "Next page", "M6 4 10 8 6 12"),
 	)
 	return h.Div(nodes...)
+}
+
+// pagerButton renders one step of the pager as a chevron icon button; the
+// direction the chevron points is the path, the words are the aria-label.
+func pagerButton(dir, label, path string) g.Node {
+	return h.Button(
+		h.Type("button"),
+		h.Class("gomu-btn gomu-page-btn"),
+		htmlx.Data("page", dir),
+		h.Aria("label", label),
+		g.El("svg",
+			g.Attr("viewBox", "0 0 16 16"),
+			g.Attr("fill", "none"),
+			g.Attr("stroke", "currentColor"),
+			g.Attr("stroke-width", "1.75"),
+			g.Attr("stroke-linecap", "round"),
+			g.Attr("stroke-linejoin", "round"),
+			g.Attr("aria-hidden", "true"),
+			g.El("path", g.Attr("d", path)),
+		),
+	)
+}
+
+// loadMoreNode renders the growing-list alternative to the pagination bar
+// (Table.LoadMore), hidden until the runtime knows more rows exist.
+func loadMoreNode() g.Node {
+	return h.Div(h.Class("gomu-more"), htmlx.Data("more", ""), g.Attr("hidden"),
+		h.Button(h.Type("button"), h.Class("gomu-btn gomu-more-btn"), htmlx.Data("reveal", ""), g.Text("Load more")),
+		h.Span(h.Class("gomu-more-count"), htmlx.Data("more-count", "")),
+	)
 }
 
 // pageSizeNode renders the per-page chooser. The runtime upgrades the select

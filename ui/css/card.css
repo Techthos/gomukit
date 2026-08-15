@@ -18,7 +18,8 @@
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scroll-behavior: smooth;
-  gap: calc(var(--gomu-space-unit) * 3);
+  /* Tiles nearly touch: the grid gutter is the tightest step in the system. */
+  gap: calc(var(--gomu-space-unit) * 2);
   padding: calc(var(--gomu-space-unit) * 4);
   /* The strip is driven by swipe, drag and the nav controls; its scrollbar
    * would only eat vertical space in an already short widget. */
@@ -65,12 +66,13 @@
   background: none;
   border: 1px dashed var(--gomu-color-border);
   border-radius: var(--gomu-radius-m);
-  padding: calc(var(--gomu-space-unit) * 3.5);
+  padding: calc(var(--gomu-space-unit) * 4);
   cursor: pointer;
 }
 
 .gomu-card-more:hover:not(:disabled) {
-  border-color: var(--gomu-color-primary);
+  border-color: var(--gomu-color-border-strong);
+  background: var(--gomu-color-surface);
 }
 
 .gomu-card-more:disabled {
@@ -79,12 +81,13 @@
 }
 
 .gomu-card-more-label {
-  font-weight: 600;
-  color: var(--gomu-color-primary);
+  font-weight: 700;
+  font-size: var(--gomu-text-sm);
+  color: var(--gomu-color-heading);
 }
 
 .gomu-card-more-count {
-  font-size: 0.8125rem;
+  font-size: var(--gomu-text-caption);
 }
 
 .gomu-carousel-nav {
@@ -95,14 +98,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: calc(var(--gomu-space-unit) * 7);
-  height: calc(var(--gomu-space-unit) * 7);
+  width: var(--gomu-h-btn);
+  height: var(--gomu-h-btn);
+  min-height: 0;
   padding: 0;
-  font-size: 0.875rem;
+  font-size: var(--gomu-text-sm);
   line-height: 1;
-  border-radius: 50%;
-  background: var(--gomu-color-bg);
-  box-shadow: 0 1px 3px rgb(0 0 0 / 0.18);
+  border-radius: var(--gomu-radius-full);
+  color: var(--gomu-color-heading);
+  background: var(--gomu-color-surface);
 }
 
 .gomu-carousel-nav[data-gomu-scroll="prev"] {
@@ -131,13 +135,14 @@
  * between sections and their inset, so a section can be padded edge to edge
  * (or run edge to edge) without going out of step with the ones above it. */
 .gomu-card-item {
-  --gomu-card-spacing: calc(var(--gomu-space-unit) * 3.5);
+  --gomu-card-spacing: calc(var(--gomu-space-unit) * 4);
   display: flex;
   flex-direction: column;
   gap: var(--gomu-card-spacing);
-  border: 1px solid var(--gomu-color-border);
   border-radius: var(--gomu-radius-m);
-  background: var(--gomu-color-bg);
+  /* A tile is cream on the widget's canvas — the system separates a card
+   * from what it sits on by fill, never by border or shadow. */
+  background: var(--gomu-color-surface);
   padding-block: var(--gomu-card-spacing);
 }
 
@@ -162,13 +167,14 @@
 
 .gomu-card-title {
   font-weight: 600;
-  font-size: 0.9375rem;
+  font-size: var(--gomu-text-title);
+  color: var(--gomu-color-heading);
   overflow-wrap: anywhere;
 }
 
 .gomu-card-description {
   color: var(--gomu-color-text-muted);
-  font-size: 0.8125rem;
+  font-size: var(--gomu-text-sm);
   overflow-wrap: anywhere;
 }
 
@@ -191,7 +197,6 @@
 
 .gomu-card-text {
   margin: 0;
-  font-size: 0.875rem;
   overflow-wrap: anywhere;
 }
 
@@ -220,7 +225,7 @@
 
 .gomu-card-note {
   color: var(--gomu-color-text-muted);
-  font-size: 0.8125rem;
+  font-size: var(--gomu-text-sm);
   margin-inline-end: auto;
   overflow-wrap: anywhere;
 }
@@ -234,8 +239,9 @@
 }
 
 .gomu-card-item-actions .gomu-btn {
-  padding: calc(var(--gomu-space-unit) * 0.75) calc(var(--gomu-space-unit) * 2.5);
-  font-size: 0.8125rem;
+  min-height: 2rem;
+  padding: calc(var(--gomu-space-unit) * 1) calc(var(--gomu-space-unit) * 3);
+  font-size: var(--gomu-text-caption);
 }
 
 /* Compact tier: give the cards their room back from the chrome. The strip
@@ -248,18 +254,19 @@
   }
 
   .gomu-card-item {
-    --gomu-card-spacing: calc(var(--gomu-space-unit) * 3);
+    --gomu-card-spacing: calc(var(--gomu-space-unit) * 3.5);
   }
 }
 
 .gomu-cards-selectall {
   display: inline-flex;
   align-items: center;
-  gap: calc(var(--gomu-space-unit) * 1.5);
-  font-size: 0.8125rem;
+  gap: calc(var(--gomu-space-unit) * 2);
+  font-size: var(--gomu-text-sm);
   color: var(--gomu-color-text-muted);
 }
 
 .gomu-sort-select {
-  padding-block: calc(var(--gomu-space-unit) * 1);
+  min-height: var(--gomu-h-btn);
+  padding-block: 0;
 }

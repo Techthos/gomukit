@@ -46,7 +46,7 @@ func (c *Confirm) shell() g.Node {
 		c.guardsNode(),
 		c.decisionNode(),
 		h.P(h.Class("gomu-confirm-outcome"), htmlx.Data("outcome", ""), g.Attr("hidden"), h.Aria("live", "polite")),
-		statusNode(),
+		statusNode(c.Brand),
 	)
 	return h.Div(h.Class("gomu-root"), htmlx.Data("widget", "confirm"),
 		h.Div(chrome...),
@@ -55,9 +55,6 @@ func (c *Confirm) shell() g.Node {
 
 func (c *Confirm) toolbar() g.Node {
 	var items []g.Node
-	if brand := brandNode(c.Brand); brand != nil {
-		items = append(items, brand)
-	}
 	if c.Title != "" {
 		items = append(items, h.H2(h.Class("gomu-title"), g.Text(c.Title)))
 	}

@@ -43,8 +43,8 @@ body {
   font-family: var(--gomu-font);
   color: var(--gomu-color-text);
   background: var(--gomu-color-page);
-  font-size: 0.875rem;
-  line-height: 1.45;
+  font-size: var(--gomu-text-body);
+  line-height: 1.4;
 }
 
 .gomu-card {
@@ -54,6 +54,8 @@ body {
   overflow: hidden;
 }
 
+/* The widget's nav strip: canvas, a hairline rule under it, and the same
+ * 16px inset every other block of chrome uses. */
 .gomu-toolbar {
   display: flex;
   align-items: center;
@@ -64,8 +66,9 @@ body {
 }
 
 .gomu-title {
-  font-size: 1rem;
+  font-size: var(--gomu-text-title);
   font-weight: 600;
+  color: var(--gomu-color-heading);
   margin: 0;
   margin-inline-end: auto;
   /* Ellipsis rather than a two-line title pushing the controls around. */
@@ -84,99 +87,163 @@ body {
   min-width: 0;
 }
 
+/* The default button is the system's secondary: a deeper cream than the card
+ * tint, ink label, no border and no shadow. Depth is not part of this
+ * vocabulary — a control is told apart from its surface by fill and radius. */
 .gomu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--gomu-h-btn);
   font: inherit;
-  color: var(--gomu-color-text);
-  background: var(--gomu-color-surface);
-  border: 1px solid var(--gomu-color-border);
-  border-radius: var(--gomu-radius-s);
-  padding: calc(var(--gomu-space-unit) * 1.5) calc(var(--gomu-space-unit) * 3);
+  font-size: var(--gomu-text-sm);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--gomu-color-heading);
+  background: var(--gomu-color-secondary);
+  border: 1px solid transparent;
+  border-radius: var(--gomu-radius-control);
+  padding: calc(var(--gomu-space-unit) * 1.5) calc(var(--gomu-space-unit) * 3.5);
   cursor: pointer;
 }
 
-.gomu-btn:hover {
-  filter: brightness(0.97);
+.gomu-btn:hover:not(:disabled),
+.gomu-btn:active:not(:disabled) {
+  background: var(--gomu-color-secondary-pressed);
 }
 
+/* The one saturated colour in the system, and the only button that carries
+ * it: whatever the widget's single primary action is. */
 .gomu-btn--primary {
   background: var(--gomu-color-primary);
   border-color: var(--gomu-color-primary);
   color: var(--gomu-color-primary-text);
 }
 
+.gomu-btn--primary:hover:not(:disabled),
+.gomu-btn--primary:active:not(:disabled) {
+  background: var(--gomu-color-primary-pressed);
+  border-color: var(--gomu-color-primary-pressed);
+}
+
+/* Destructive: the error tone on a transparent field, so a red primary and a
+ * destructive action are never the same button. */
 .gomu-btn--danger {
   color: var(--gomu-color-danger);
-  border-color: var(--gomu-color-danger);
   background: transparent;
 }
 
+.gomu-btn--danger:hover:not(:disabled),
+.gomu-btn--danger:active:not(:disabled) {
+  background: color-mix(in srgb, var(--gomu-color-danger) 10%, transparent);
+}
+
 .gomu-btn:disabled {
-  opacity: 0.5;
+  background: var(--gomu-color-surface);
+  border-color: transparent;
+  color: var(--gomu-color-placeholder);
   cursor: default;
 }
 
+/* The focus signal is a stack, not an outline: a gap in the surface colour,
+ * then the focus blue outside it, so it reads on cream, on white and on the
+ * red button alike. */
 .gomu-root :focus-visible {
-  outline: 2px solid var(--gomu-color-primary);
-  outline-offset: 1px;
+  outline: none;
+  box-shadow: var(--gomu-ring);
 }
 
+/* A field is canvas inside a seam one step up from a divider — enough to find
+ * it, not so much that a column of fields reads as a stack of outlines. */
 .gomu-input {
   font: inherit;
+  min-height: var(--gomu-h-input);
   color: var(--gomu-color-text);
   background: var(--gomu-color-bg);
-  border: 1px solid var(--gomu-color-border);
-  border-radius: var(--gomu-radius-s);
-  padding: calc(var(--gomu-space-unit) * 1.5) calc(var(--gomu-space-unit) * 2.5);
+  border: 1px solid var(--gomu-color-border-strong);
+  border-radius: var(--gomu-radius-control);
+  padding: calc(var(--gomu-space-unit) * 2.75) calc(var(--gomu-space-unit) * 3.75);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
+.gomu-input::placeholder {
+  color: var(--gomu-color-placeholder);
+}
+
+/* Focused, the hairline goes to ink under the same ring every other control
+ * wears. */
+.gomu-input:focus-visible {
+  outline: none;
+  border-color: var(--gomu-color-heading);
+  box-shadow: var(--gomu-ring);
+}
+
+/* The filter is a search bar: cream fill, no seam of its own, and it flips to
+ * canvas the moment it is focused. */
+.gomu-filter {
+  min-height: var(--gomu-h-search);
+  background: var(--gomu-color-surface);
+  border-color: transparent;
+}
+
+.gomu-filter:focus-visible {
+  background: var(--gomu-color-bg);
+  border-color: var(--gomu-color-border-strong);
+}
+
+/* Chips are pills. Neutral wears the card cream; a status tone tints its own
+ * colour instead, at the weight the system gives its success pill. */
 .gomu-badge {
   display: inline-block;
-  padding: 0 calc(var(--gomu-space-unit) * 2);
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  border: 1px solid var(--gomu-color-border);
-  color: var(--gomu-color-text-muted);
+  padding: calc(var(--gomu-space-unit) * 1.5) calc(var(--gomu-space-unit) * 3);
+  border-radius: var(--gomu-radius-full);
+  font-size: var(--gomu-text-caption);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--gomu-color-heading);
+  background: var(--gomu-color-surface);
 }
 
 .gomu-badge--info {
-  color: var(--gomu-color-primary);
-  border-color: currentcolor;
+  color: var(--gomu-color-info);
+  background: color-mix(in srgb, var(--gomu-color-info) 12%, transparent);
 }
 
 .gomu-badge--success {
   color: var(--gomu-color-success);
-  border-color: currentcolor;
+  background: var(--gomu-color-success-bg);
 }
 
 .gomu-badge--warning {
   color: var(--gomu-color-warning);
-  border-color: currentcolor;
+  background: color-mix(in srgb, var(--gomu-color-warning) 15%, transparent);
 }
 
 .gomu-badge--danger {
   color: var(--gomu-color-danger);
-  border-color: currentcolor;
+  background: color-mix(in srgb, var(--gomu-color-danger) 10%, transparent);
 }
 
-/* Status bar: the last element of every widget. The bar is always laid out,
- * at a fixed height and with its message clipped to a single line, so the
- * widget's height is identical whether or not something is loading — a host
- * iframe sized from our size-changed reports must not jump mid-call. */
+/* Status bar: the last element of every widget, and the widget's footer — the
+ * brand sits at its start, the runtime's message after it. The bar is always
+ * laid out, at a fixed height and with its message clipped to a single line,
+ * so the widget's height is identical whether or not something is loading — a
+ * host iframe sized from our size-changed reports must not jump mid-call. */
 .gomu-statusbar {
   display: flex;
   align-items: center;
-  font-size: 0.8125rem;
-  padding: calc(var(--gomu-space-unit) * 2) calc(var(--gomu-space-unit) * 4);
+  gap: calc(var(--gomu-space-unit) * 3);
+  /* One line tall whether or not anything is in it, at whatever font scale the
+   * host imposes. A zero-width strut used to hold that height, but a strut is
+   * a flex item and took the bar's gap with it, setting the brand in past
+   * every other left edge in the widget. Padding and border are in the box,
+   * so they are in the floor. */
+  min-height: calc(1.4em + var(--gomu-space-unit) * 6 + 1px);
+  font-size: var(--gomu-text-sm);
+  padding: calc(var(--gomu-space-unit) * 3) calc(var(--gomu-space-unit) * 4);
   border-top: 1px solid var(--gomu-color-border);
-}
-
-/* Zero-width strut: holds the bar at exactly one line while the message is
- * hidden, at whatever font scale the host imposes. */
-.gomu-statusbar::before {
-  content: "";
-  width: 0;
-  height: 1.45em;
 }
 
 .gomu-status {
@@ -218,6 +285,12 @@ body {
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .gomu-input {
+    transition: none;
+  }
+}
+
 .gomu-empty {
   padding: calc(var(--gomu-space-unit) * 8) calc(var(--gomu-space-unit) * 4);
   text-align: center;
@@ -226,8 +299,9 @@ body {
 
 .gomu-empty h3 {
   margin: 0 0 calc(var(--gomu-space-unit) * 1);
-  font-size: 0.9375rem;
-  color: var(--gomu-color-text);
+  font-size: var(--gomu-text-title);
+  font-weight: 600;
+  color: var(--gomu-color-heading);
 }
 
 .gomu-empty p {
@@ -239,19 +313,37 @@ body {
   border: none;
   padding: 0;
   font: inherit;
-  color: var(--gomu-color-primary);
-  text-decoration: underline;
+  font-weight: 600;
+  color: var(--gomu-color-link);
+  /* Weight carries the link; the underline is the hover state. */
+  text-decoration: none;
   cursor: pointer;
 }
 
-/* Brand: application logo/name, first item in the widget toolbar. */
+.gomu-link:hover {
+  text-decoration: underline;
+}
+
+/* Brand: application logo/name, first item in the widget's footer bar. It
+ * keeps its width and the status message takes what is left, so a long
+ * message ellipses instead of squeezing the mark. */
 .gomu-brand {
   display: flex;
   align-items: center;
+  flex: none;
   gap: calc(var(--gomu-space-unit) * 2);
-  font-size: 0.8125rem;
+  font-size: var(--gomu-text-sm);
   color: var(--gomu-color-text-muted);
   min-width: 0;
+}
+
+.gomu-brand-logo {
+  height: 1.125rem;
+}
+
+.gomu-brand-logo > svg,
+img.gomu-brand-logo {
+  height: 1.125rem;
 }
 
 .gomu-brand-logo {

@@ -17,8 +17,8 @@ import (
 // All fields hold raw CSS values (e.g. "#0f62fe", "0.5rem", "ui-sans-serif,
 // system-ui"). Empty fields keep the host-aware defaults.
 type Theme struct {
-	ColorBackground  string // page/widget background
-	ColorSurface     string // cards, table header, inputs
+	ColorBackground  string // canvas: widget shell, modal, text inputs
+	ColorSurface     string // cream: cards, tiles, chips, table header, hovers
 	ColorText        string
 	ColorTextMuted   string
 	ColorBorder      string

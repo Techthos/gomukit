@@ -9,7 +9,7 @@
 .gomu-ask-message {
   margin: 0;
   color: var(--gomu-color-text);
-  font-size: 0.9375rem;
+  font-size: var(--gomu-text-body);
   line-height: 1.5;
 }
 

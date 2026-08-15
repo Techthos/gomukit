@@ -25,16 +25,16 @@
   font: inherit;
   text-align: start;
   color: var(--gomu-color-text);
-  background: var(--gomu-color-bg);
-  border: 1px solid var(--gomu-color-border);
+  /* Category tile: cream, 16px, flat, 16px inset. */
+  background: var(--gomu-color-surface);
+  border: 1px solid transparent;
   border-radius: var(--gomu-radius-m);
-  padding: calc(var(--gomu-space-unit) * 3.5);
+  padding: calc(var(--gomu-space-unit) * 4);
   cursor: pointer;
 }
 
 .gomu-menu-item:hover:not(:disabled) {
-  background: var(--gomu-color-surface);
-  border-color: var(--gomu-color-primary);
+  background: var(--gomu-color-secondary);
 }
 
 /* Tiles are disabled together while a menu tool call is in flight. */
@@ -57,7 +57,7 @@
 .gomu-menu-icon {
   display: inline-flex;
   flex: none;
-  color: var(--gomu-color-primary);
+  color: var(--gomu-color-heading);
 }
 
 .gomu-menu-icon > svg {
@@ -71,13 +71,13 @@
 
 .gomu-menu-label {
   font-weight: 600;
-  font-size: 0.9375rem;
+  font-size: var(--gomu-text-body);
   overflow-wrap: anywhere;
 }
 
 .gomu-menu-desc {
   color: var(--gomu-color-text-muted);
-  font-size: 0.8125rem;
+  font-size: var(--gomu-text-sm);
   overflow-wrap: anywhere;
 }
 

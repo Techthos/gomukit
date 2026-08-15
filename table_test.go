@@ -227,6 +227,12 @@ func TestTableValidate(t *testing.T) {
 		"negative page size":     func(t *Table) { t.PageSize = -1 },
 		"page size option zero":  func(t *Table) { t.PageSizes = []int{10, 0} },
 		"page sizes unpaginated": func(t *Table) { t.PageSize, t.PageSizes = 0, []int{10} },
+		"load more unpaginated": func(t *Table) {
+			t.PageSize, t.PageSizes, t.LoadMore = 0, nil, true
+		},
+		"load more with page sizes": func(t *Table) {
+			t.PageSize, t.PageSizes, t.LoadMore = 5, []int{5, 10}, true
+		},
 		"default sort no key": func(t *Table) {
 			t.DefaultSort = &SortSpec{}
 		},

@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { applyHostContext } from "../src/host";
+import { applyHostContext, watchSize } from "../src/host";
 import { formatCell, setLocale } from "../src/format";
+import { Bridge } from "../src/bridge";
+import { M } from "../src/protocol";
+import { FakeHost, flush } from "./fake-host";
 
 afterEach(() => {
   document.documentElement.removeAttribute("data-gomu-theme");
@@ -78,5 +81,29 @@ describe("formatCell", () => {
     expect(formatCell("not-a-date", "date", "date")).toBe("not-a-date");
     expect(formatCell("NaN?", "number", "int")).toBe("NaN?");
     expect(formatCell(null, "text")).toBe("");
+  });
+});
+
+describe("watchSize", () => {
+  it("reports a height that is never short of the content", async () => {
+    const host = new FakeHost();
+    const bridge = new Bridge({ timeoutMs: 500 });
+    const el = document.createElement("div");
+    document.body.append(el);
+    // jsdom has no layout: this is a body 410.40625px tall, which is what
+    // scrollHeight rounds down to 410 — one rounding short of the content, and
+    // the frame the host sizes from it grows a scrollbar.
+    Object.defineProperty(el, "scrollHeight", { configurable: true, get: () => 410 });
+    el.getBoundingClientRect = () => ({ height: 410.40625 }) as DOMRect;
+
+    const stop = watchSize(bridge, el);
+    await flush();
+    const sizes = host.received(M.sizeChanged);
+    expect(sizes[0]!.params).toEqual({ height: 411 });
+
+    stop();
+    bridge.dispose();
+    host.dispose();
+    el.remove();
   });
 });

@@ -31,8 +31,10 @@
   overflow: hidden;
   background: var(--gomu-color-bg);
   border: 1px solid var(--gomu-color-border);
-  border-radius: var(--gomu-radius-m);
-  box-shadow: 0 12px 40px rgb(0 0 0 / 0.28);
+  /* Its own radius, tighter than a card's: these panels are mostly a list of
+   * rows. The one shadow the system admits sits under here. */
+  border-radius: var(--gomu-radius-panel);
+  box-shadow: var(--gomu-shadow-modal);
   animation: gomu-pop-in 0.14s ease-out;
 }
 
@@ -63,8 +65,8 @@
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  font-size: 0.8125rem;
-  font-weight: 500;
+  font-size: var(--gomu-text-sm);
+  font-weight: 700;
   color: var(--gomu-color-text-muted);
 }
 
@@ -73,18 +75,17 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 2rem;
+  height: 2rem;
   padding: 0;
-  color: var(--gomu-color-text-muted);
+  color: var(--gomu-color-heading);
   background: none;
   border: 0;
-  border-radius: var(--gomu-radius-s);
+  border-radius: var(--gomu-radius-full);
   cursor: pointer;
 }
 
 .gomu-pop-close:hover {
-  color: var(--gomu-color-text);
   background: var(--gomu-color-surface);
 }
 

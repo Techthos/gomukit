@@ -89,17 +89,18 @@ func TestBrandRendersInEveryWidget(t *testing.T) {
 					t.Errorf("document missing %q", want)
 				}
 			}
-			// The brand is the toolbar's first child: top left, before the
-			// title. Matched on the class attribute so the stylesheet's own
-			// ".gomu-brand" rule is not mistaken for the markup.
-			toolbar := strings.Index(doc, `class="gomu-toolbar"`)
+			// The brand leads the status bar: bottom left, ahead of the
+			// runtime's message. Matched on the class attribute so the
+			// stylesheet's own ".gomu-brand" rule is not mistaken for the
+			// markup.
+			bar := strings.Index(doc, `class="gomu-statusbar"`)
 			mark := strings.Index(doc, `class="gomu-brand`)
-			title := strings.Index(doc, `class="gomu-title"`)
-			if toolbar < 0 || mark < toolbar {
-				t.Error("brand is not inside the toolbar")
+			status := strings.Index(doc, `class="gomu-status"`)
+			if bar < 0 || mark < bar {
+				t.Error("brand is not inside the status bar")
 			}
-			if title >= 0 && title < mark {
-				t.Error("brand must precede the title")
+			if status >= 0 && status < mark {
+				t.Error("brand must precede the status message")
 			}
 		})
 	}
@@ -117,8 +118,9 @@ func TestBrandDataURILogoRendersAsImage(t *testing.T) {
 	}
 }
 
-// A brand must produce the toolbar even when the widget has no title.
-func TestBrandCreatesToolbarWithoutTitle(t *testing.T) {
+// The brand rides in the status bar, so it shows with no title — and with no
+// toolbar at all, where the title was the toolbar's only other content.
+func TestBrandShowsWithoutTitle(t *testing.T) {
 	brand := &Brand{Name: "Acme"}
 	for kind, w := range widgetsWithBrand(brand) {
 		t.Run(kind, func(t *testing.T) {
@@ -138,13 +140,22 @@ func TestBrandCreatesToolbarWithoutTitle(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !strings.Contains(doc, `class="gomu-toolbar"`) {
-				t.Error("document missing the toolbar")
-			}
 			if !strings.Contains(doc, `class="gomu-brand"`) {
 				t.Error("document missing the brand")
 			}
 		})
+	}
+
+	// And a widget whose toolbar held nothing but the brand now has no
+	// toolbar at all — the mark moved to the bar at the foot.
+	c := canonicalCard()
+	c.Title, c.Brand = "", brand
+	doc, err := c.Document()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(doc, `class="gomu-toolbar"`) {
+		t.Error("a titleless card should render no toolbar")
 	}
 }
 

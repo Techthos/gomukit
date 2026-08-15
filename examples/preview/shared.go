@@ -31,7 +31,7 @@ func dataURIBrand() *gomukit.Brand {
 // appTheme runs frameless: the host leaves the iframe unpainted, so dropping
 // the page fill and the gutter puts the card straight on the host surface.
 func appTheme() *theme.Theme {
-	return &theme.Theme{ColorPrimary: "#7c3aed", Transparent: true}
+	return &theme.Theme{Transparent: true}
 }
 
 // --- shared column and action building blocks ---

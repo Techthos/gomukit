@@ -24,7 +24,8 @@
 
 .gomu-desc-label {
   color: var(--gomu-color-text-muted);
-  font-size: 0.8125rem;
+  font-size: var(--gomu-text-sm);
+  font-weight: 700;
 }
 
 .gomu-desc-value {
@@ -64,7 +65,7 @@
 
 .gomu-desc-error {
   margin: calc(var(--gomu-space-unit) * 0.5) 0 0;
-  font-size: 0.75rem;
+  font-size: var(--gomu-text-caption);
   color: var(--gomu-color-danger);
 }
 

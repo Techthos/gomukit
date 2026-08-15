@@ -33,10 +33,19 @@ func (t *Table) Document() (string, error) {
 }
 
 func (t *Table) shell() g.Node {
+	wrap := []g.Node{h.Class("gomu-table-wrap")}
+	if t.MaxHeight != "" {
+		// The cap turns the wrap into the scroll container the sticky header
+		// and the runtime's load-on-scroll hang off (see table.css/table.ts).
+		wrap = []g.Node{
+			h.Class("gomu-table-wrap gomu-table-wrap--scroll"),
+			h.Style("max-height:" + t.MaxHeight),
+		}
+	}
 	return h.Div(h.Class("gomu-root"), htmlx.Data("widget", "table"),
 		h.Div(h.Class("gomu-card"),
 			t.toolbar(),
-			h.Div(h.Class("gomu-table-wrap"),
+			h.Div(append(wrap,
 				// The roles are spelled out because the compact tier restacks
 				// each row as a block (see table.css), and `display: block`
 				// drops a table's implicit roles. Explicit ones survive the
@@ -47,19 +56,19 @@ func (t *Table) shell() g.Node {
 					h.THead(h.Role("rowgroup"), h.Tr(append([]g.Node{h.Role("row")}, t.headerCells()...)...)),
 					h.TBody(h.Role("rowgroup"), htmlx.Data("rows", "")),
 				),
-			),
+			)...),
 			emptyStateNode(t.Empty),
-			paginationNode(pageSizeOptions(t.PageSize, t.PageSizes), t.PageSize),
-			statusNode(),
+			// LoadMore grows the list in place, so there is no page to move
+			// between: its bar replaces the pager.
+			g.If(!t.LoadMore, paginationNode(pageSizeOptions(t.PageSize, t.PageSizes), t.PageSize)),
+			g.If(t.LoadMore, loadMoreNode()),
+			statusNode(t.Brand),
 		),
 	)
 }
 
 func (t *Table) toolbar() g.Node {
 	var items []g.Node
-	if brand := brandNode(t.Brand); brand != nil {
-		items = append(items, brand)
-	}
 	if t.Title != "" {
 		items = append(items, h.H2(h.Class("gomu-title"), g.Text(t.Title)))
 	}

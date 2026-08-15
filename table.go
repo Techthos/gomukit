@@ -37,6 +37,19 @@ type Table struct {
 	// bar. Entries must be > 0 and PageSize must be set; PageSize is added to
 	// the list if it is not among them. Empty renders no chooser.
 	PageSizes []int
+	// LoadMore turns the table into a growing list instead of a paged one: it
+	// starts at PageSize rows and appends the next PageSize each time the
+	// reader activates the "Load more" bar that replaces the prev/next
+	// pagination bar. With MaxHeight also set, running out of scroll reveals
+	// the next batch by itself.
+	//
+	// Requires PageSize > 0, and cannot be combined with PageSizes: the page
+	// size chooser lives on the bar this removes.
+	LoadMore bool
+	// MaxHeight caps the rows area at a CSS length (e.g. "20rem"). Past it
+	// the rows scroll inside the widget under a sticky header row, instead of
+	// the widget growing taller with every row.
+	MaxHeight string
 	// DefaultSort pre-sorts rows on load.
 	DefaultSort *SortSpec
 	// Filterable adds a client-side text filter box.
@@ -255,6 +268,14 @@ func (t *Table) Validate() error {
 	if err := validatePageSizes(fmt.Sprintf("gomukit: table %s", t.URI), t.PageSize, t.PageSizes); err != nil {
 		return err
 	}
+	if t.LoadMore {
+		if t.PageSize <= 0 {
+			return fmt.Errorf("gomukit: table %s: LoadMore needs PageSize > 0", t.URI)
+		}
+		if len(t.PageSizes) > 0 {
+			return fmt.Errorf("gomukit: table %s: LoadMore and PageSizes are mutually exclusive", t.URI)
+		}
+	}
 	if t.DefaultSort != nil && t.DefaultSort.Key == "" {
 		return fmt.Errorf("gomukit: table %s: DefaultSort.Key is required", t.URI)
 	}
@@ -331,6 +352,9 @@ func (t *Table) config() map[string]any {
 		"pageSize":   t.PageSize,
 		"filterable": t.Filterable,
 		"columns":    cols,
+	}
+	if t.LoadMore {
+		cfg["loadMore"] = true
 	}
 	if t.DefaultSort != nil {
 		cfg["defaultSort"] = t.DefaultSort

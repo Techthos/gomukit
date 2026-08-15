@@ -8,8 +8,8 @@ import (
 )
 
 // Brand identifies the application a widget belongs to: an optional logo, a
-// name, and an optional link. It renders at the top left of the widget
-// chrome, before the title, and is shared by pointer across widgets.
+// name, and an optional link. It renders at the bottom left of the widget
+// chrome, leading the status bar, and is shared by pointer across widgets.
 //
 // Documents must stay self-contained, so a logo is never a URL: supply either
 // inline SVG markup (LogoSVG, recommended — it needs nothing from the host's

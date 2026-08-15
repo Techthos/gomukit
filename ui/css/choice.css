@@ -13,7 +13,7 @@
 
 .gomu-choice-question {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--gomu-text-title);
   font-weight: 600;
   overflow-wrap: anywhere;
 }
@@ -60,10 +60,12 @@
   display: flex;
   align-items: flex-start;
   gap: calc(var(--gomu-space-unit) * 3);
-  padding: calc(var(--gomu-space-unit) * 3);
-  border: 1px solid var(--gomu-color-border);
+  padding: calc(var(--gomu-space-unit) * 4);
+  /* A tile like any other in the system: cream, 16px, flat. Selection is a
+   * 2px ink edge — the same signal a focused field gets. */
+  border: 2px solid transparent;
   border-radius: var(--gomu-radius-m);
-  background: var(--gomu-color-bg);
+  background: var(--gomu-color-surface);
   cursor: pointer;
   transition:
     border-color 0.15s ease,
@@ -71,12 +73,12 @@
 }
 
 .gomu-choice-option:hover:not(.gomu-choice-option--disabled) {
-  border-color: var(--gomu-color-primary);
+  background: var(--gomu-color-secondary);
 }
 
 .gomu-choice-option--selected {
-  border-color: var(--gomu-color-primary);
-  background: color-mix(in srgb, var(--gomu-color-primary) 6%, var(--gomu-color-bg));
+  border-color: var(--gomu-color-heading);
+  background: var(--gomu-color-bg);
 }
 
 .gomu-choice-option--disabled {
@@ -87,7 +89,7 @@
 /* Split only: which option the panel is describing. In the stacked layout the
  * unfolded description already says it. */
 .gomu-choice--split .gomu-choice-option--active {
-  box-shadow: inset 0 0 0 1px var(--gomu-color-primary);
+  border-color: var(--gomu-color-border-strong);
 }
 
 .gomu-choice-mark {
@@ -99,8 +101,8 @@
 .gomu-choice-mark--radio {
   display: inline-flex;
   flex: none;
-  width: 1.125rem;
-  height: 1.125rem;
+  width: 1.25rem;
+  height: 1.25rem;
 }
 
 .gomu-choice-radio {
@@ -109,7 +111,8 @@
   width: 100%;
   height: 100%;
   margin: 0;
-  border: 1.5px solid var(--gomu-color-border);
+  /* Same step past the hairline as .gomu-check: the ring is the control. */
+  border: 1.5px solid var(--gomu-color-border-strong);
   border-radius: 50%;
   background: var(--gomu-color-bg);
   cursor: pointer;
@@ -119,14 +122,14 @@
 }
 
 .gomu-choice-radio:hover:not(:disabled) {
-  border-color: var(--gomu-color-primary);
+  border-color: var(--gomu-color-heading);
 }
 
 /* The dot is an inset ring rather than a child element, so the control stays
  * one node and one hit area. */
 .gomu-choice-radio:checked {
-  border-color: var(--gomu-color-primary);
-  box-shadow: inset 0 0 0 0.25rem var(--gomu-color-primary);
+  border-color: var(--gomu-color-heading);
+  box-shadow: inset 0 0 0 0.25rem var(--gomu-color-heading);
 }
 
 .gomu-choice-radio:disabled {
@@ -150,12 +153,13 @@
 
 .gomu-choice-label {
   font-weight: 600;
+  color: var(--gomu-color-heading);
   overflow-wrap: anywhere;
 }
 
 .gomu-choice-summary {
   color: var(--gomu-color-text-muted);
-  font-size: 0.8125rem;
+  font-size: var(--gomu-text-sm);
 }
 
 /* --- The description ---------------------------------------------------
@@ -166,7 +170,7 @@
   padding: calc(var(--gomu-space-unit) * 4);
   border: 1px solid var(--gomu-color-border);
   border-radius: var(--gomu-radius-m);
-  background: var(--gomu-color-surface);
+  background: var(--gomu-color-bg);
   min-width: 0;
   /* Keeps the case for the option in view while a long list is scrolled. */
   position: sticky;
@@ -187,7 +191,7 @@
 
 .gomu-choice-info-title {
   margin: 0 0 calc(var(--gomu-space-unit) * 2);
-  font-size: 0.9375rem;
+  font-size: var(--gomu-text-body);
   font-weight: 600;
   overflow-wrap: anywhere;
 }
@@ -204,7 +208,7 @@
   display: flex;
   flex-direction: column;
   gap: calc(var(--gomu-space-unit) * 1);
-  font-size: 0.875rem;
+  font-size: var(--gomu-text-sm);
 }
 
 .gomu-choice-bullets li::marker {
@@ -225,7 +229,7 @@
   margin: 0;
   padding: 0 calc(var(--gomu-space-unit) * 4) calc(var(--gomu-space-unit) * 3);
   color: var(--gomu-color-text-muted);
-  font-size: 0.8125rem;
+  font-size: var(--gomu-text-sm);
 }
 
 .gomu-choice-actions {

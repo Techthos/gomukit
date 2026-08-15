@@ -284,6 +284,11 @@ func galleryCatalog() []preview {
 			Widget: galleryTableLong(), Data: rowsOnly(long),
 		},
 		{
+			Tool: "preview_table_loadmore", Group: "Table", Label: "Table, load more", Icon: iconTable,
+			Desc:   "A growing list in a scroll-capped rows area: reaching the bottom loads the next batch.",
+			Widget: galleryTableLoadMore(), Data: rowsOnly(long),
+		},
+		{
 			Tool: "preview_table_empty", Group: "Table", Label: "Table, empty state", Icon: iconTable,
 			Desc:   "The no-data message a table shows when the result carries no rows.",
 			Widget: galleryTableEmpty(), Data: rowsOnly([]map[string]any{}),
@@ -577,6 +582,15 @@ func galleryTableLong() *gomukit.Table {
 		Brand:       appBrand(),
 		Theme:       appTheme(),
 	}
+}
+
+func galleryTableLoadMore() *gomukit.Table {
+	t := galleryTableLong()
+	t.URI = "ui://preview/gallery-table-loadmore"
+	t.PageSizes = nil
+	t.LoadMore = true
+	t.MaxHeight = "20rem"
+	return t
 }
 
 func galleryTableEmpty() *gomukit.Table {

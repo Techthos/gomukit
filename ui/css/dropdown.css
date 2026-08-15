@@ -38,12 +38,13 @@
 }
 
 .gomu-dd-trigger:hover:not(:disabled) {
-  border-color: var(--gomu-color-primary);
+  border-color: var(--gomu-color-heading);
 }
 
+/* Open is the trigger's focused state, and wears the same ring. */
 .gomu-dd-trigger[aria-expanded="true"] {
-  border-color: var(--gomu-color-primary);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--gomu-color-primary) 20%, transparent);
+  border-color: var(--gomu-color-heading);
+  box-shadow: var(--gomu-ring);
 }
 
 .gomu-dd-trigger[aria-invalid="true"] {
@@ -77,7 +78,7 @@
 
 .gomu-dd-trigger[aria-expanded="true"] .gomu-dd-chevron {
   transform: rotate(180deg);
-  color: var(--gomu-color-primary);
+  color: var(--gomu-color-heading);
 }
 
 /* The panel surface itself is .gomu-pop-panel (popup.css). A search field
@@ -101,7 +102,7 @@
   display: flex;
   align-items: center;
   gap: calc(var(--gomu-space-unit) * 2);
-  padding: calc(var(--gomu-space-unit) * 1.5) calc(var(--gomu-space-unit) * 2);
+  padding: calc(var(--gomu-space-unit) * 2.5) calc(var(--gomu-space-unit) * 3);
   border-radius: var(--gomu-radius-s);
   white-space: nowrap;
   cursor: pointer;
@@ -112,8 +113,8 @@
 }
 
 .gomu-dd-option[aria-selected="true"] {
-  color: var(--gomu-color-primary);
-  font-weight: 500;
+  color: var(--gomu-color-heading);
+  font-weight: 700;
 }
 
 .gomu-dd-option[aria-disabled="true"] {
@@ -145,7 +146,7 @@
   align-items: center;
   gap: calc(var(--gomu-space-unit) * 2);
   margin-inline-end: auto;
-  font-size: 0.8125rem;
+  font-size: var(--gomu-text-sm);
   color: var(--gomu-color-text-muted);
   /* The caption and a two-or-three digit control are already at their minimum;
    * left shrinkable, the chooser is the first thing a cramped pagination bar
@@ -154,8 +155,11 @@
   flex: none;
 }
 
+/* A number chooser on a pagination bar, not a form field: it sits at the
+ * button height rather than the input height. */
 .gomu-page-size-select {
-  padding-block: calc(var(--gomu-space-unit) * 0.75);
+  min-height: var(--gomu-h-btn);
+  padding-block: 0;
 }
 
 /* Wide enough for the digits plus the chevron, whatever the page sizes are. */

@@ -48,7 +48,7 @@ func (d *DatePicker) shell() g.Node {
 		h.P(h.Class("gomu-datepicker-summary"), htmlx.Data("summary", ""), g.Attr("hidden"), h.Aria("live", "polite")),
 		d.decisionNode(),
 		h.P(h.Class("gomu-datepicker-outcome"), htmlx.Data("outcome", ""), g.Attr("hidden"), h.Aria("live", "polite")),
-		statusNode(),
+		statusNode(d.Brand),
 	)
 	return h.Div(h.Class("gomu-root"), htmlx.Data("widget", "datepicker"),
 		h.Div(chrome...),
@@ -57,9 +57,6 @@ func (d *DatePicker) shell() g.Node {
 
 func (d *DatePicker) toolbar() g.Node {
 	var items []g.Node
-	if brand := brandNode(d.Brand); brand != nil {
-		items = append(items, brand)
-	}
 	if d.Title != "" {
 		items = append(items, h.H2(h.Class("gomu-title"), g.Text(d.Title)))
 	}

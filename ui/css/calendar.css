@@ -72,7 +72,8 @@
 }
 
 .gomu-cal-nav:hover:not(:disabled) {
-  border-color: var(--gomu-color-primary);
+  background: var(--gomu-color-surface);
+  border-color: var(--gomu-color-border-strong);
 }
 
 .gomu-cal-nav:disabled {
@@ -88,8 +89,9 @@
 /* The caption dropdowns are the gomukit dropdown at a smaller size: a month name
  * and a year, not a field. */
 .gomu-cal .gomu-dd-trigger {
-  padding-block: calc(var(--gomu-space-unit) * 0.5);
-  font-size: 0.875rem;
+  min-height: 2rem;
+  padding-block: 0;
+  font-size: var(--gomu-text-sm);
 }
 
 /* The upgrade copies author classes onto the trigger (see dropdown.ts), so the
@@ -140,7 +142,7 @@
   padding-bottom: calc(var(--gomu-space-unit) * 1);
   width: 2.25rem;
   color: var(--gomu-color-text-muted);
-  font-size: 0.75rem;
+  font-size: var(--gomu-text-caption);
   font-weight: 500;
   text-align: center;
 }
@@ -152,7 +154,7 @@
   padding-inline-end: calc(var(--gomu-space-unit) * 1.5);
   border-inline-end: 1px solid var(--gomu-color-border);
   color: var(--gomu-color-text-muted);
-  font-size: 0.6875rem;
+  font-size: var(--gomu-text-caption);
   font-weight: 400;
   text-align: end;
 }
@@ -171,7 +173,7 @@
   padding: 0;
   color: inherit;
   font: inherit;
-  font-size: 0.875rem;
+  font-size: var(--gomu-text-sm);
   background: transparent;
   border: 1px solid transparent;
   border-radius: var(--gomu-radius-s);
@@ -182,7 +184,7 @@
 }
 
 .gomu-cal-day:hover:not([aria-disabled="true"]) {
-  background: color-mix(in srgb, var(--gomu-color-primary) 12%, transparent);
+  background: var(--gomu-color-surface);
 }
 
 /* Today is marked, not selected: a ring, so a selected today still reads as
@@ -208,7 +210,7 @@
   width: 2.25rem;
   height: 2.25rem;
   color: var(--gomu-color-text-muted);
-  font-size: 0.875rem;
+  font-size: var(--gomu-text-sm);
   opacity: 0.4;
 }
 
@@ -216,8 +218,10 @@
 
 /* The band lives on the cell so it meets its neighbours with no gap between
  * them; the ends are rounded off by the cells below. */
+/* The band is the cream tint, not the accent: only the two ends of the range
+ * are a selection, and the system inverts a selection to ink. */
 .gomu-cal-cell--in-range {
-  background: color-mix(in srgb, var(--gomu-color-primary) 12%, transparent);
+  background: var(--gomu-color-surface);
 }
 
 .gomu-cal-cell--start {
@@ -240,20 +244,20 @@
 /* The two ends are the selection proper. */
 .gomu-cal-day--start,
 .gomu-cal-day--end {
-  background: var(--gomu-color-primary);
-  border-color: var(--gomu-color-primary);
-  color: var(--gomu-color-primary-text);
-  font-weight: 600;
+  background: var(--gomu-color-heading);
+  border-color: var(--gomu-color-heading);
+  color: var(--gomu-color-bg);
+  font-weight: 700;
 }
 
 .gomu-cal-day--start:hover,
 .gomu-cal-day--end:hover {
-  background: var(--gomu-color-primary);
+  background: var(--gomu-color-heading);
 }
 
 .gomu-cal-day:focus-visible {
-  outline: 2px solid var(--gomu-color-primary);
-  outline-offset: 1px;
+  outline: none;
+  box-shadow: var(--gomu-ring);
 }
 
 /* --- Presets and the footer -------------------------------------------- */
@@ -270,7 +274,7 @@
   text-align: center;
   background: transparent;
   border-color: transparent;
-  font-size: 0.875rem;
+  font-size: var(--gomu-text-sm);
 }
 
 /* A shortcut with nothing pickable in its window — all of it outside Min/Max,
@@ -294,7 +298,7 @@
   background: transparent;
   border-color: transparent;
   color: var(--gomu-color-text-muted);
-  font-size: 0.8125rem;
+  font-size: var(--gomu-text-sm);
 }
 
 /* Once the decision is made the grid is a record of it, not a control. */
@@ -357,12 +361,12 @@
 }
 
 .gomu-dt-trigger:hover:not(:disabled) {
-  border-color: var(--gomu-color-primary);
+  border-color: var(--gomu-color-heading);
 }
 
 .gomu-dt-trigger[aria-expanded="true"] {
-  border-color: var(--gomu-color-primary);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--gomu-color-primary) 20%, transparent);
+  border-color: var(--gomu-color-heading);
+  box-shadow: var(--gomu-ring);
 }
 
 .gomu-dt-trigger[aria-invalid="true"] {

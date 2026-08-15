@@ -70,6 +70,13 @@ table := &gomukit.Table{
   Text/number/date columns sort by default (`Sortable` overrides). `PageSizes`
   adds a page-size dropdown to the pagination bar; picking a size returns to
   the first page, and the bar stays visible even when everything fits on one.
+- **`LoadMore`** replaces the pager with a "Load more" bar: the table starts
+  at `PageSize` rows and appends the next `PageSize` per activation (requires
+  `PageSize > 0`, excludes `PageSizes`). **`MaxHeight`** (a CSS length, e.g.
+  `"20rem"`) caps the rows area: past it the rows scroll under a sticky header
+  instead of the widget growing — and combined with `LoadMore`, reaching the
+  bottom of that scroll loads the next batch by itself. Filter or sort changes
+  start the run over at the first batch.
 - **RowID** (default `"id"`) identifies rows for selection and args.
 - **Actions**: `Kind` tool (default) calls an MCP tool; `Kind` link opens
   `HrefKey` via `ui/open-link`. Arg sources: `Static(v)`, `FromRow(field)`,
@@ -735,9 +742,9 @@ brand := &gomukit.Brand{
 table := &gomukit.Table{URI: "ui://myapp/users", Brand: brand /* … */}
 ```
 
-- **Placement**: always the top left of the widget, as the toolbar's first
-  item, before the title. It makes the toolbar appear even when `Title` is
-  empty.
+- **Placement**: always the bottom left of the widget, leading the status bar
+  ahead of the runtime's message. It is not part of the toolbar, so a widget
+  with a brand and no `Title` renders no toolbar at all.
 - **Logo**: prefer `LogoSVG` (inline markup, nothing needed from the host's
   CSP). `LogoDataURI` takes a `data:image/...;base64,...` string and renders an
   `<img>`, which depends on the host allowing `img-src data:` — not guaranteed

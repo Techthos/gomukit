@@ -34,13 +34,10 @@ func (f *Form) Document() (string, error) {
 
 func (f *Form) shell() g.Node {
 	var body []g.Node
-	brand := brandNode(f.Brand)
-	if f.Title != "" || brand != nil {
-		toolbar := []g.Node{h.Class("gomu-toolbar"), brand}
-		if f.Title != "" {
-			toolbar = append(toolbar, h.H2(h.Class("gomu-title"), g.Text(f.Title)))
-		}
-		body = append(body, h.Div(toolbar...))
+	if f.Title != "" {
+		body = append(body, h.Div(h.Class("gomu-toolbar"),
+			h.H2(h.Class("gomu-title"), g.Text(f.Title)),
+		))
 	}
 	// novalidate: the runtime runs checkValidity itself and renders inline
 	// errors; native validation would swallow the submit event and rely on
@@ -79,7 +76,7 @@ func (f *Form) shell() g.Node {
 	))
 	formChildren = append(formChildren, h.Div(actions...))
 
-	body = append(body, h.Form(formChildren...), statusNode())
+	body = append(body, h.Form(formChildren...), statusNode(f.Brand))
 
 	return h.Div(h.Class("gomu-root"), htmlx.Data("widget", "form"),
 		h.Div(append([]g.Node{h.Class("gomu-card")}, body...)...),

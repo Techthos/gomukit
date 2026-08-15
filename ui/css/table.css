@@ -2,6 +2,21 @@
   overflow-x: auto;
 }
 
+/* Scroll-capped rows area (Table.MaxHeight, which sets the max-height
+ * inline): the rows scroll under a sticky header row instead of the widget
+ * growing taller with every row. */
+.gomu-table-wrap--scroll {
+  overflow-y: auto;
+}
+
+.gomu-table-wrap--scroll thead th {
+  /* Opaque surface fill comes with thead th already — rows must not show
+   * through while they pass under it. */
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
 .gomu-table {
   width: 100%;
   border-collapse: collapse;
@@ -10,15 +25,15 @@
 .gomu-table th,
 .gomu-table td {
   text-align: start;
-  padding: calc(var(--gomu-space-unit) * 2) calc(var(--gomu-space-unit) * 4);
+  padding: calc(var(--gomu-space-unit) * 3) calc(var(--gomu-space-unit) * 4);
   border-bottom: 1px solid var(--gomu-color-border);
 }
 
 .gomu-table thead th {
   background: var(--gomu-color-surface);
-  font-weight: 600;
-  font-size: 0.8125rem;
-  color: var(--gomu-color-text-muted);
+  font-weight: 700;
+  font-size: var(--gomu-text-sm);
+  color: var(--gomu-color-heading);
   white-space: nowrap;
 }
 
@@ -27,7 +42,7 @@
 }
 
 .gomu-table tbody tr:hover td {
-  background: color-mix(in srgb, var(--gomu-color-surface) 55%, transparent);
+  background: var(--gomu-color-surface);
 }
 
 .gomu-align-end {
@@ -79,7 +94,7 @@ th[aria-sort="descending"] .gomu-sort-btn::after {
 }
 
 .gomu-bulk-count {
-  font-size: 0.8125rem;
+  font-size: var(--gomu-text-sm);
   color: var(--gomu-color-text-muted);
 }
 
@@ -103,7 +118,47 @@ th[aria-sort="descending"] .gomu-sort-btn::after {
 }
 
 .gomu-page-info {
-  font-size: 0.8125rem;
+  font-size: var(--gomu-text-sm);
+  color: var(--gomu-color-text-muted);
+}
+
+/* One pager step: the system's circular icon button — a cream disc with the
+ * chevron in ink, labelled for the screen reader by its aria-label. */
+.gomu-page-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--gomu-h-btn);
+  height: var(--gomu-h-btn);
+  min-height: 0;
+  padding: 0;
+  color: var(--gomu-color-heading);
+  background: var(--gomu-color-surface);
+  border-radius: var(--gomu-radius-full);
+}
+
+.gomu-page-btn:hover:not(:disabled) {
+  background: var(--gomu-color-secondary);
+}
+
+.gomu-page-btn svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* The growing-list bar that replaces the pager under Table.LoadMore. */
+.gomu-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--gomu-space-unit) * 3);
+  padding: calc(var(--gomu-space-unit) * 2.5) calc(var(--gomu-space-unit) * 4);
+  border-top: 1px solid var(--gomu-color-border);
+}
+
+.gomu-more-count {
+  font-size: var(--gomu-text-sm);
   color: var(--gomu-color-text-muted);
 }
 
@@ -158,7 +213,7 @@ th[aria-sort="descending"] .gomu-sort-btn::after {
 }
 
 .gomu-root[data-gomu-stacked] .gomu-table tbody tr:hover {
-  background: color-mix(in srgb, var(--gomu-color-surface) 55%, transparent);
+  background: var(--gomu-color-surface);
 }
 
 .gomu-root[data-gomu-stacked] .gomu-table td {
@@ -174,8 +229,8 @@ th[aria-sort="descending"] .gomu-sort-btn::after {
 .gomu-root[data-gomu-stacked] .gomu-table td[data-gomu-label]::before {
   content: attr(data-gomu-label);
   flex: none;
-  font-size: 0.8125rem;
-  font-weight: 500;
+  font-size: var(--gomu-text-sm);
+  font-weight: 700;
   color: var(--gomu-color-text-muted);
 }
 

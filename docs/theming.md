@@ -9,7 +9,7 @@ Every semantic token defaults to the **host-injected MCP Apps variable**
 with a library fallback:
 
 ```css
---gomu-color-text: var(--color-text-primary, var(--gomu-p-gray-900));
+--gomu-color-text: var(--color-text-primary, var(--gomu-p-body));
 ```
 
 MCP Apps hosts (Claude, ChatGPT, …) deliver `hostContext.styles.variables`
@@ -110,20 +110,38 @@ empty fields keep host-aware behavior. `Extra` keys must start with
 
 ## Token reference (semantic layer)
 
+The palette, type scale and shape vocabulary come from `DESIGN.md` at the
+repo root: warm-cream chrome, one saturated red reserved for the primary
+action, 16px as the radius of nearly everything, and no shadow outside the
+modal layer. Fields on `Theme` override the semantic tokens; the
+library-owned ones below (no host variable, no `Theme` field) take an `Extra`
+entry.
+
 | Token | Purpose | Host variable consulted |
 |---|---|---|
-| `--gomu-color-bg` | cards, controls, overlays | `--color-background-primary` |
-| `--gomu-color-page` | page fill behind the widget (defaults to `--gomu-color-bg`; `transparent` hides the frame) | — |
-| `--gomu-color-surface` | headers, inputs, cards | `--color-background-secondary` |
-| `--gomu-color-text` | primary text | `--color-text-primary` |
+| `--gomu-color-bg` | canvas: widget shell, modal, text inputs | `--color-background-primary` |
+| `--gomu-color-page` | page fill behind the widget (`transparent` hides the frame) | `--color-background-primary` |
+| `--gomu-color-surface` | cream: cards, tiles, chips, table header, hovers | `--color-background-secondary` |
+| `--gomu-color-secondary` / `-pressed` | secondary button fill and its pressed state | — |
+| `--gomu-color-heading` | ink: headings, labels, button text | `--color-text-primary` |
+| `--gomu-color-text` | body prose | `--color-text-primary` |
 | `--gomu-color-text-muted` | secondary text | `--color-text-secondary` |
-| `--gomu-color-border` | borders | `--color-border-primary` |
-| `--gomu-color-primary` | accent / primary buttons | `--color-text-accent` |
+| `--gomu-color-link` | inline links (weight, not hue, carries them) | — |
+| `--gomu-color-border` | hairline dividers | `--color-border-primary` |
+| `--gomu-color-border-strong` | the heavier seam around a control you can type into | — |
+| `--gomu-color-primary` / `-pressed` | the one accent: primary buttons | `--color-text-accent` |
 | `--gomu-color-danger` | destructive actions, errors | `--color-text-danger` |
-| `--gomu-color-success` | success states | `--color-text-success` |
-| `--gomu-color-warning` | warnings | `--color-text-warning` |
-| `--gomu-font` / `--gomu-font-mono` | typography | `--font-sans` / `--font-mono` |
-| `--gomu-radius-s/m/l` | corner radii | `--border-radius-sm/md/lg` |
+| `--gomu-color-success` / `-bg` | success text and its pale chip fill | `--color-text-success` |
+| `--gomu-color-warning` | warnings (the one tone `DESIGN.md` does not supply) | `--color-text-warning` |
+| `--gomu-color-info` | informational chips — the editorial accent, never the brand red | — |
+| `--gomu-color-focus` / `-inner` | the focus ring's blue and the gap inside it | — |
+| `--gomu-font` / `--gomu-font-mono` | typography (Inter, then the system stack) | `--font-sans` / `--font-mono` |
+| `--gomu-text-body/sm/caption/title` | type scale (16 / 14 / 12 / 18px) | — |
+| `--gomu-radius-s/m/l` | corner radii (8 / 16 / 32px) | `--border-radius-sm/md/lg` |
+| `--gomu-radius-full` | pill: chips, search bar, icon buttons | — |
+| `--gomu-h-btn` / `--gomu-h-input` / `--gomu-h-search` | control heights (40 / 44 / 48px) | — |
+| `--gomu-shadow-modal` | the system's only shadow, under the modal | — |
+| `--gomu-ring` | focus ring stack | — |
 | `--gomu-space-unit` | base spacing unit (0.25rem) | — |
 | `--gomu-page-pad` | gutter between widget and iframe edge (8px; set on `:root`) | — |
 | `--gomu-card-border-width` / `--gomu-card-radius` | widget shell frame (both `0`; `Framed` sets them) | — |

@@ -46,7 +46,7 @@ func (c *Choice) shell() g.Node {
 		h.P(h.Class("gomu-choice-hint"), htmlx.Data("hint", ""), g.Attr("hidden"), h.Aria("live", "polite")),
 		c.decisionNode(),
 		h.P(h.Class("gomu-choice-outcome"), htmlx.Data("outcome", ""), g.Attr("hidden"), h.Aria("live", "polite")),
-		statusNode(),
+		statusNode(c.Brand),
 	)
 	return h.Div(h.Class("gomu-root"), htmlx.Data("widget", "choice"),
 		h.Div(chrome...),
@@ -55,9 +55,6 @@ func (c *Choice) shell() g.Node {
 
 func (c *Choice) toolbar() g.Node {
 	var items []g.Node
-	if brand := brandNode(c.Brand); brand != nil {
-		items = append(items, brand)
-	}
 	if c.Title != "" {
 		items = append(items, h.H2(h.Class("gomu-title"), g.Text(c.Title)))
 	}

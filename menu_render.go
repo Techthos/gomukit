@@ -32,7 +32,7 @@ func (m *Menu) shell() g.Node {
 	if m.Intro != "" {
 		chrome = append(chrome, h.P(h.Class("gomu-menu-intro"), g.Text(m.Intro)))
 	}
-	chrome = append(chrome, m.grid(), statusNode())
+	chrome = append(chrome, m.grid(), statusNode(m.Brand))
 	return h.Div(h.Class("gomu-root"), htmlx.Data("widget", "menu"),
 		h.Div(chrome...),
 	)
@@ -40,9 +40,6 @@ func (m *Menu) shell() g.Node {
 
 func (m *Menu) toolbar() g.Node {
 	var items []g.Node
-	if brand := brandNode(m.Brand); brand != nil {
-		items = append(items, brand)
-	}
 	if m.Title != "" {
 		items = append(items, h.H2(h.Class("gomu-title"), g.Text(m.Title)))
 	}

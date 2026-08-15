@@ -137,6 +137,11 @@ func catalog() []story {
 			Payload: pushRows, build: func() gomukit.Widget { return tableLong() },
 		},
 		{
+			ID: "table-loadmore", Group: "Table", Label: "Load more",
+			Desc:    "24 records, eight at a time in a scroll-capped list — reaching the bottom loads the next batch.",
+			Payload: pushRows, build: func() gomukit.Widget { return tableLoadMore() },
+		},
+		{
 			ID: "table-empty", Group: "Table", Label: "Empty state",
 			Desc:    "Ships with no snapshot; push a result to fill it.",
 			Payload: pushRows, build: func() gomukit.Widget { return tableEmpty() },
@@ -554,7 +559,9 @@ func demoBrand() *gomukit.Brand {
 	}
 }
 
-func demoTheme() *theme.Theme { return &theme.Theme{ColorPrimary: "#7c3aed"} }
+// The stories run on the library's own palette (DESIGN.md) rather than an
+// example accent, so the harness shows what a host gets out of the box.
+func demoTheme() *theme.Theme { return nil }
 
 func num(v float64) *float64 { return &v }
 
@@ -650,6 +657,18 @@ func tableLong() *gomukit.Table {
 		Brand:       demoBrand(),
 		Theme:       demoTheme(),
 	}
+}
+
+// tableLoadMore exercises the growing list: no pagination bar, a "Load more"
+// bar instead, and a scroll-capped rows area that loads on scroll.
+func tableLoadMore() *gomukit.Table {
+	t := tableLong()
+	t.URI = "ui://harness/table-loadmore"
+	t.Title = "Directory"
+	t.PageSizes = nil
+	t.LoadMore = true
+	t.MaxHeight = "20rem"
+	return t
 }
 
 func tableEmpty() *gomukit.Table {

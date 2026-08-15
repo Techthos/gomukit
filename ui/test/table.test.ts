@@ -4,7 +4,12 @@ import { mountTable } from "../src/widgets/table";
 import { M } from "../src/protocol";
 import { FakeHost, flush } from "./fake-host";
 
-function shell({ selection = false, bulk = false, pageSizes = [] as number[] } = {}): HTMLElement {
+function shell({
+  selection = false,
+  bulk = false,
+  pageSizes = [] as number[],
+  loadMore = false,
+} = {}): HTMLElement {
   document.body.innerHTML = "";
   const root = document.createElement("div");
   root.className = "gomu-root";
@@ -32,18 +37,21 @@ function shell({ selection = false, bulk = false, pageSizes = [] as number[] } =
       <th aria-sort="none" data-gomu-sort="age"><button type="button">Age</button></th>
     </tr></thead><tbody data-gomu-rows=""></tbody></table></div>
     <div data-gomu-empty="" hidden><h3>No records yet</h3></div>
-    <div data-gomu-pagination="" hidden>
-      ${
-        pageSizes.length > 0
-          ? `<div class="gomu-page-size"><span>Per page</span><select data-gomu-page-size="">` +
-            pageSizes.map((n) => `<option value="${n}">${n}</option>`).join("") +
-            `</select></div>`
-          : ""
-      }
-      <button type="button" data-gomu-page="prev">Prev</button>
-      <span data-gomu-page-info=""></span>
-      <button type="button" data-gomu-page="next">Next</button>
-    </div>`;
+    ${
+      loadMore
+        ? `<div data-gomu-more="" hidden>` +
+          `<button type="button" data-gomu-reveal="">Load more</button>` +
+          `<span data-gomu-more-count=""></span></div>`
+        : `<div data-gomu-pagination="" hidden>` +
+          (pageSizes.length > 0
+            ? `<div class="gomu-page-size"><span>Per page</span><select data-gomu-page-size="">` +
+              pageSizes.map((n) => `<option value="${n}">${n}</option>`).join("") +
+              `</select></div>`
+            : "") +
+          `<button type="button" data-gomu-page="prev">Prev</button>` +
+          `<span data-gomu-page-info=""></span>` +
+          `<button type="button" data-gomu-page="next">Next</button></div>`
+    }`;
   document.body.append(root);
   return root;
 }
@@ -237,6 +245,68 @@ describe("table behavior", () => {
     expect(root.querySelector("[data-gomu-page-info]")?.textContent).toBe("1–3 of 3");
     // One page now, but the bar stays: it is the way back to a smaller page.
     expect(pagination.hidden).toBe(false);
+  });
+
+  it("grows the list under load more and retires the bar at the end", () => {
+    const root = shell({ loadMore: true });
+    mountTable({
+      root,
+      config: config({ pageSize: 2, loadMore: true }),
+      initialData: { rows: ROWS },
+      bridge,
+    });
+    const more = root.querySelector<HTMLElement>("[data-gomu-more]")!;
+    expect(root.querySelectorAll("tbody tr")).toHaveLength(2);
+    expect(more.hidden).toBe(false);
+    expect(root.querySelector("[data-gomu-more-count]")?.textContent).toBe("2 of 3");
+
+    root.querySelector<HTMLElement>("[data-gomu-reveal]")!.click();
+    expect(root.querySelectorAll("tbody tr")).toHaveLength(3);
+    expect(more.hidden).toBe(true);
+  });
+
+  it("load more starts the run over when the filter changes the set", async () => {
+    const rows = [...ROWS, { id: 4, name: "Cathy", age: 41 }];
+    const root = shell({ loadMore: true });
+    mountTable({
+      root,
+      config: config({ pageSize: 1, loadMore: true }),
+      initialData: { rows },
+      bridge,
+    });
+    root.querySelector<HTMLElement>("[data-gomu-reveal]")!.click();
+    expect(root.querySelectorAll("tbody tr")).toHaveLength(2);
+
+    const input = root.querySelector<HTMLInputElement>("[data-gomu-filter]")!;
+    input.value = "ca";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 250));
+    // Carol and Cathy match, but the run is back to its first batch of one.
+    expect(root.querySelectorAll("tbody tr")).toHaveLength(1);
+    expect(root.querySelector("[data-gomu-more-count]")?.textContent).toBe("1 of 2");
+  });
+
+  it("reveals the next batch when the scroll-capped wrap runs out of scroll", () => {
+    const root = shell({ loadMore: true });
+    const wrap = root.querySelector<HTMLElement>(".gomu-table-wrap")!;
+    wrap.classList.add("gomu-table-wrap--scroll");
+    // jsdom has no layout: pin the geometry at "resting on the bottom".
+    Object.defineProperty(wrap, "scrollTop", { configurable: true, get: () => 100 });
+    Object.defineProperty(wrap, "clientHeight", { configurable: true, get: () => 200 });
+    Object.defineProperty(wrap, "scrollHeight", { configurable: true, get: () => 300 });
+    mountTable({
+      root,
+      config: config({ pageSize: 2, loadMore: true }),
+      initialData: { rows: ROWS },
+      bridge,
+    });
+    expect(root.querySelectorAll("tbody tr")).toHaveLength(2);
+
+    wrap.dispatchEvent(new Event("scroll"));
+    expect(root.querySelectorAll("tbody tr")).toHaveLength(3);
+    // Nothing left: another scroll must not grow past the set.
+    wrap.dispatchEvent(new Event("scroll"));
+    expect(root.querySelectorAll("tbody tr")).toHaveLength(3);
   });
 
   it("posts a row action's prompt as a chat message instead of calling the tool", async () => {

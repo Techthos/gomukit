@@ -159,6 +159,8 @@ type Table struct {
 
     PageSize    int              // > 0 enables client-side pagination (page size); 0 disables; < 0 is invalid
     PageSizes   []int            // alternative page sizes offered in a dropdown on the pagination bar; entries > 0; needs PageSize > 0; PageSize is added if absent; empty renders no chooser
+    LoadMore    bool             // grow the list instead of paging it: starts at PageSize rows and appends PageSize more per "Load more" bar, in place of the pagination bar; with MaxHeight set, reaching the bottom of the scroll area also loads the next batch; needs PageSize > 0; cannot be combined with PageSizes
+    MaxHeight   string           // CSS length (e.g. "20rem") capping the rows area; past it the rows scroll inside the widget under a sticky header row
     DefaultSort *SortSpec        // pre-sort rows on load (Key required when set)
     Filterable  bool             // adds a client-side text filter box
     Selection   *SelectionConfig // enables row checkboxes + bulk actions
@@ -167,7 +169,7 @@ type Table struct {
     InitialData map[string]any        // optional structuredContent-shaped snapshot baked into the document
     LoadTool    string                 // read tool the runtime calls once on load to re-fetch rows (must return them under RowsKey), replacing the baked snapshot so a reloaded widget shows current data
     LoadArgs    map[string]any         // optional static args passed to LoadTool
-    Brand       *Brand                 // application logo/name shown on the widget
+    Brand       *Brand                 // application logo/name, shown bottom left in the status bar
     Theme       *theme.Theme          // design-token overrides for this widget
     UI          *uispec.ResourceUIMeta // overrides resource _meta.ui (CSP, permissions, prefersBorder)
 }
@@ -1214,7 +1216,7 @@ spec does not guarantee. A `Brand` with `URL` renders as a button, not an
 anchor — navigation is blocked in the host's sandboxed iframe, so the runtime
 hands the URL to `ui/openLink`.
 
-A brand makes the toolbar appear even when `Title` is empty.
+The brand renders at the start of the widget's footer bar (bottom left), ahead of the runtime status message — not in the toolbar, so a widget with a brand and no `Title` renders no toolbar at all.
 
 ### 3.18 Validation rules (what `Validate()` / `Document()` reject)
 
@@ -1225,6 +1227,7 @@ Table:
 - link columns: `Link.HrefKey` required.
 - actions columns: at least one action.
 - `PageSize >= 0`; `PageSizes` entries `> 0` and only with `PageSize > 0`;
+  `LoadMore` needs `PageSize > 0` and rejects `PageSizes`;
   `DefaultSort.Key` required when `DefaultSort` is set.
 - Actions: `Label` required; `Tool` required for tool kind; `HrefKey` required
   for link kind; all `Args` built with the constructors; `FromSelection` only
@@ -1527,8 +1530,8 @@ zero configuration, and dark mode follows the host theme (with a
 
 ```go
 type Theme struct {
-    ColorBackground  string // page/widget background
-    ColorSurface     string // cards, table header, inputs
+    ColorBackground  string // canvas: widget shell, modal, text inputs
+    ColorSurface     string // cream: cards, tiles, chips, table header, hovers
     ColorText        string
     ColorTextMuted   string
     ColorBorder      string
@@ -1578,6 +1581,13 @@ Token → host variable mapping (for reference): `--gomu-color-bg` ←
 danger/success/warning ← `--color-text-danger/success/warning`,
 `--gomu-font`/`--gomu-font-mono` ← `--font-sans`/`--font-mono`,
 `--gomu-radius-s/m/l` ← `--border-radius-sm/md/lg`.
+
+The default palette, type scale and shape vocabulary come from `DESIGN.md` at
+the repo root (warm-cream chrome, one accent reserved for the primary action,
+8/16/32px radii, no shadow outside the modal). Tokens without a `Theme` field
+— `--gomu-color-heading`, `-link`, `-secondary`, `-border-strong`, `-info`,
+`-focus`, the `--gomu-text-*` scale and the `--gomu-h-*` control heights — are
+set through `Extra`; `docs/theming.md` lists them all.
 
 ### Embedding without a visible frame
 

@@ -76,9 +76,17 @@ export function watchSize(bridge: Bridge, el?: HTMLElement): () => void {
     // measurement — the vertical scrollbar and any reflow (e.g. a wrapping
     // toolbar) shave a few pixels off every read, so each tick reports a smaller
     // width and the frame ratchets to zero. Per MCP Apps the iframe fills the
-    // available width; only height is content-driven, so report scrollHeight and
+    // available width; only height is content-driven, so report the height and
     // leave width to the host.
-    bridge.sizeChanged(target.scrollHeight);
+    //
+    // Rounded up, and never below either measurement: scrollHeight is an
+    // integer, so content 410.4px tall reports 410, the host sizes the frame a
+    // rounding short of it, and the frame grows a scrollbar over four tenths
+    // of a pixel. The rect carries the fraction; scrollHeight carries anything
+    // overflowing the body box.
+    bridge.sizeChanged(
+      Math.max(target.scrollHeight, Math.ceil(target.getBoundingClientRect().height)),
+    );
   };
   const schedule = (): void => {
     if (raf) return;

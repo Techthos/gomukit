@@ -59,6 +59,8 @@ interface TableCfg {
 	pageSize: number;
 	filterable: boolean;
 	columns: ColumnCfg[];
+	// Grow the list in place instead of paging it (Table.LoadMore).
+	loadMore?: boolean;
 	defaultSort?: SortSpec;
 	selection?: { bulk: ActionCfg[] };
 	empty?: { title?: string; body?: string };
@@ -74,6 +76,10 @@ interface TableState {
 	// Starts at the configured PageSize; the pagination bar's chooser (when the
 	// widget renders one) moves it.
 	pageSize: number;
+	// LoadMore mode only: how many rows the table currently shows. Grows by
+	// pageSize per "Load more", and resets whenever the filter or sort changes
+	// the set being read.
+	revealed: number;
 	selected: string[];
 	status: "idle" | "loading";
 	statusKind?: "error" | "success";
@@ -96,6 +102,9 @@ export function mountTable(ctx: MountContext): void {
 	const emptyTitleDefault = emptyTitleEl?.textContent ?? "";
 	const paginationEl = root.querySelector<HTMLElement>("[data-gomu-pagination]");
 	const pageInfoEl = root.querySelector<HTMLElement>("[data-gomu-page-info]");
+	const moreEl = root.querySelector<HTMLElement>("[data-gomu-more]");
+	const moreBtnEl = root.querySelector<HTMLButtonElement>("[data-gomu-reveal]");
+	const moreCountEl = root.querySelector<HTMLElement>("[data-gomu-more-count]");
 	const bulkEl = root.querySelector<HTMLElement>("[data-gomu-bulk]");
 	const bulkCountEl = root.querySelector<HTMLElement>("[data-gomu-bulk-count]");
 	const bulkMenuEl = root.querySelector<HTMLButtonElement>("[data-gomu-bulk-menu]");
@@ -130,6 +139,20 @@ export function mountTable(ctx: MountContext): void {
 		if (tableEl.scrollWidth > wrapEl.clientWidth) {
 			root.setAttribute("data-gomu-stacked", "");
 		}
+		lastWidth = wrapEl.clientWidth;
+	}
+
+	// The verdict can only change when the room does, and taking it costs a
+	// synchronous reflow — so the width is remembered and anything that leaves
+	// it alone is ignored. This is not an optimisation: toggling the layout
+	// changes the widget's height, the host follows that with a frame resize,
+	// and a re-measure on every resize would answer its own writes forever.
+	let lastWidth = -1;
+	function updateStackingIfResized(): void {
+		const width = wrapEl?.clientWidth ?? -1;
+		if (width === lastWidth) return;
+		lastWidth = width;
+		updateStacking();
 	}
 
 	const filterKeys = cfg.columns.map((c) => c.key).filter((k) => k !== "");
@@ -141,6 +164,7 @@ export function mountTable(ctx: MountContext): void {
 		filter: "",
 		page: 0,
 		pageSize: cfg.pageSize,
+		revealed: cfg.pageSize,
 		selected: [],
 		status: "idle",
 	});
@@ -150,7 +174,11 @@ export function mountTable(ctx: MountContext): void {
 	function visible(s: TableState): { pageRows: Row[]; total: number } {
 		const filtered = sortRows(filterRows(s.rows, s.filter, filterKeys), s.sort);
 		return {
-			pageRows: pageSlice(filtered, s.page, s.pageSize),
+			// LoadMore shows one growing run from the top of the set; paging
+			// shows one window of it.
+			pageRows: cfg.loadMore
+				? filtered.slice(0, s.revealed)
+				: pageSlice(filtered, s.page, s.pageSize),
 			total: filtered.length,
 		};
 	}
@@ -380,6 +408,13 @@ export function mountTable(ctx: MountContext): void {
 			}
 		}
 
+		// load more
+		if (moreEl) {
+			moreEl.hidden = pageRows.length >= total;
+			if (moreCountEl) moreCountEl.textContent = `${pageRows.length} of ${total}`;
+			if (moreBtnEl) moreBtnEl.disabled = busy;
+		}
+
 		// selection
 		if (selectAllEl) {
 			const onPage = pageRows.filter((r) => selected.has(rowID(r))).length;
@@ -408,18 +443,15 @@ export function mountTable(ctx: MountContext): void {
 		updateStacking();
 	}
 
-	// Rows settle the content side of the measurement; this settles the space
-	// side. Gated on the inline size because toggling the layout changes the
-	// wrap's height, and an unguarded observer would answer its own writes.
+	// Rows settle the content side of the measurement; these two settle the
+	// space side. The observer catches the widget being given a different
+	// amount of room; the frame's own resize event catches the same thing in a
+	// host that has throttled the iframe, where a rendering update — and with
+	// it the observer's callback — never arrives.
 	if (wrapEl && typeof ResizeObserver !== "undefined") {
-		let lastWidth = -1;
-		new ResizeObserver((entries) => {
-			const width = entries[0]?.contentRect.width ?? -1;
-			if (width === lastWidth) return;
-			lastWidth = width;
-			updateStacking();
-		}).observe(wrapEl);
+		new ResizeObserver(updateStackingIfResized).observe(wrapEl);
 	}
+	window.addEventListener("resize", updateStackingIfResized);
 
 	// --- events ---
 
@@ -428,6 +460,7 @@ export function mountTable(ctx: MountContext): void {
 		store.set({
 			sort: { key, desc: s?.key === key ? !s.desc : false },
 			page: 0,
+			revealed: cfg.pageSize,
 		});
 	});
 
@@ -437,11 +470,15 @@ export function mountTable(ctx: MountContext): void {
 		sortSelectEl.addEventListener("change", () => {
 			const v = sortSelectEl.value;
 			if (v === "") {
-				store.set({ sort: null, page: 0 });
+				store.set({ sort: null, page: 0, revealed: cfg.pageSize });
 				return;
 			}
 			const sep = v.lastIndexOf("|");
-			store.set({ sort: { key: v.slice(0, sep), desc: v.slice(sep + 1) === "desc" }, page: 0 });
+			store.set({
+				sort: { key: v.slice(0, sep), desc: v.slice(sep + 1) === "desc" },
+				page: 0,
+				revealed: cfg.pageSize,
+			});
 		});
 	}
 
@@ -449,9 +486,37 @@ export function mountTable(ctx: MountContext): void {
 	delegate(root, "input", "filter", (el) => {
 		clearTimeout(filterTimer);
 		filterTimer = setTimeout(() => {
-			store.set({ filter: (el as HTMLInputElement).value, page: 0 });
+			// A different set of rows is a different run: LoadMore starts it
+			// from the first batch again.
+			store.set({
+				filter: (el as HTMLInputElement).value,
+				page: 0,
+				revealed: cfg.pageSize,
+			});
 		}, FILTER_DEBOUNCE_MS);
 	});
+
+	// Reveals the next batch. The wrap keeps its scroll position across the
+	// re-render, so the new rows extend the run from where the bar stood.
+	delegate(root, "click", "reveal", () => {
+		const s = store.get();
+		store.set({ revealed: s.revealed + (s.pageSize > 0 ? s.pageSize : s.rows.length) });
+	});
+
+	// Load on scroll: with a scroll-capped wrap (Table.MaxHeight), running out
+	// of scroll reveals the next batch by itself; the bar's button stays as
+	// the fallback and the path without a pointer.
+	if (cfg.loadMore && wrapEl?.classList.contains("gomu-table-wrap--scroll")) {
+		const wrap = wrapEl;
+		wrap.addEventListener("scroll", () => {
+			if (wrap.scrollTop + wrap.clientHeight < wrap.scrollHeight - 48) return;
+			const s = store.get();
+			if (s.status === "loading") return;
+			const { pageRows, total } = visible(s);
+			if (pageRows.length >= total) return;
+			store.set({ revealed: s.revealed + s.pageSize });
+		});
+	}
 
 	delegate(root, "click", "page", (_el, dir) => {
 		const s = store.get();

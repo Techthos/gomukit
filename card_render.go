@@ -35,19 +35,16 @@ func (c *Card) Document() (string, error) {
 func (c *Card) shell() g.Node {
 	var chrome []g.Node
 	chrome = append(chrome, h.Class("gomu-card"))
-	brand := brandNode(c.Brand)
-	if c.Title != "" || brand != nil {
-		toolbar := []g.Node{h.Class("gomu-toolbar"), brand}
-		if c.Title != "" {
-			toolbar = append(toolbar, h.H2(h.Class("gomu-title"), g.Text(c.Title)))
-		}
-		chrome = append(chrome, h.Div(toolbar...))
+	if c.Title != "" {
+		chrome = append(chrome, h.Div(h.Class("gomu-toolbar"),
+			h.H2(h.Class("gomu-title"), g.Text(c.Title)),
+		))
 	}
 	chrome = append(chrome,
 		// The runtime renders one card element into this host.
 		h.Div(h.Class("gomu-card-host"), htmlx.Data("card", "")),
 		emptyStateNode(c.Empty),
-		statusNode(),
+		statusNode(c.Brand),
 	)
 	return h.Div(h.Class("gomu-root"), htmlx.Data("widget", "card"),
 		h.Div(chrome...),
@@ -88,7 +85,7 @@ func (l *CardList) shell() g.Node {
 			// between and no bar to move with — the runtime appends its tile
 			// to the strip instead.
 			g.If(!l.LoadMore, paginationNode(pageSizeOptions(l.PageSize, l.PageSizes), l.PageSize)),
-			statusNode(),
+			statusNode(l.Brand),
 		),
 	)
 }
@@ -123,9 +120,6 @@ func carouselNavButton(dir, label, glyph string) g.Node {
 
 func (l *CardList) toolbar() g.Node {
 	var items []g.Node
-	if brand := brandNode(l.Brand); brand != nil {
-		items = append(items, brand)
-	}
 	if l.Title != "" {
 		items = append(items, h.H2(h.Class("gomu-title"), g.Text(l.Title)))
 	}

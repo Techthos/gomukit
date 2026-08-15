@@ -17,7 +17,7 @@
   height: 1.25rem;
   /* Optical alignment with the question's cap height. */
   margin-top: 0.1rem;
-  color: var(--gomu-color-primary);
+  color: var(--gomu-color-heading);
 }
 
 .gomu-confirm-icon > svg {
@@ -39,7 +39,7 @@
 
 .gomu-confirm-question {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--gomu-text-title);
   font-weight: 600;
   overflow-wrap: anywhere;
 }
@@ -78,7 +78,7 @@
 }
 
 .gomu-effect--info {
-  --gomu-effect-color: var(--gomu-color-primary);
+  --gomu-effect-color: var(--gomu-color-info);
 }
 
 .gomu-effect--success {
@@ -112,13 +112,13 @@
 
 .gomu-effect-detail {
   color: var(--gomu-color-text-muted);
-  font-size: 0.8125rem;
+  font-size: var(--gomu-text-sm);
 }
 
 .gomu-effect-value {
   flex: none;
   color: var(--gomu-color-text-muted);
-  font-size: 0.8125rem;
+  font-size: var(--gomu-text-sm);
   font-variant-numeric: tabular-nums;
 }
 
@@ -150,7 +150,7 @@
 
 .gomu-confirm-type label {
   color: var(--gomu-color-text-muted);
-  font-size: 0.8125rem;
+  font-size: var(--gomu-text-sm);
 }
 
 .gomu-confirm-type code {
