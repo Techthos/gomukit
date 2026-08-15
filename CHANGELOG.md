@@ -1,5 +1,42 @@
 # Changelog
 
+## v0.11.0 - 2026-08-16
+
+- **The default look comes from `DESIGN.md`.** The palette, type scale and
+  shape vocabulary are now the ones documented at the repo root: warm-cream
+  chrome on a canvas ground, one saturated accent held back for the primary
+  action, 8px on controls and 16px on cards with pills for chips and circular
+  icon buttons, a 16px body scale, and no shadow anywhere but under a modal.
+  Surfaces separate by fill rather than by elevation. Nothing about the token
+  layer changed: every semantic token still resolves the host's variable
+  first, so a themed host looks as it did, and a `Theme` still overrides
+  whatever it names. Widgets that relied on the previous look will need one.
+  New library-owned tokens — heading ink, the link tint, the secondary button
+  fill, the control seam, the info chip, the focus blue, the type scale and
+  the control heights — are listed in `docs/theming.md` and take an `Extra`
+  entry.
+- **A table can grow instead of paging.** `Table.LoadMore` starts at
+  `PageSize` rows and appends the next `PageSize` from a "Load more" bar that
+  replaces the pager (`PageSize > 0`, and it rejects `PageSizes`, whose
+  chooser lives on the bar it removes). `Table.MaxHeight` caps the rows area
+  at a CSS length: past it the rows scroll inside the widget under a sticky
+  header instead of the widget growing with every row. Set both and running
+  out of scroll reveals the next batch by itself; a filter or sort change
+  starts the run over at the first batch.
+- **The brand moved to the bottom left**, leading the status bar ahead of the
+  runtime's message rather than opening the toolbar. A widget carrying a brand
+  and no `Title` now renders no toolbar at all.
+- **A widget no longer reports a height a rounding short of its content.**
+  `scrollHeight` is an integer, so content 410.4px tall reported 410, the host
+  sized the frame to it, and the frame grew a scrollbar over four tenths of a
+  pixel. The report is rounded up and never below either measurement.
+- **A table restacks when the frame resizes, not only when the observer
+  fires.** A host that throttles the iframe never delivers the rendering
+  update the observer rides on, which left a table in grid layout in a pane
+  too narrow for it, scrolling sideways. The frame's own resize event now
+  takes the same measurement, gated on the width so a height change cannot
+  make it answer its own writes.
+
 ## v0.9.0 - 2026-08-01
 
 - **An action can say which records it applies to.** `Action.VisibleWhen` takes
