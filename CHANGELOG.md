@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.12.0 - 2026-08-18
+
+- **A widget with no data yet says so, instead of saying there is none.** A
+  widget rendered without an `InitialData` snapshot had only two states, full
+  or empty, so an empty rows array painted the "No data" block on first paint,
+  before any host had spoken; a widget that knew it was loading showed that
+  block and its spinner at the same time. `Table`, `CardList`, `Card` and
+  `Choice` now start unloaded and paint a skeleton in the shape of their rows,
+  cards or options, reaching their empty state only once data actually
+  resolves: a `ui/notifications/tool-result`, a `LoadTool` response (success or
+  failure), a cancelled call, a handshake nobody answered, or a 1.5s wait for a
+  host that pushes none of these. An empty snapshot
+  (`InitialData: map[string]any{"rows": []}`) counts as resolved, so a widget
+  you know is empty still says so immediately, and the new
+  `EmptyState.Immediate` does the same without a snapshot. `Form` gets no
+  skeleton, since its fields are structure rather than data, but a form with a
+  `LoadTool` now keeps its controls disabled until the prefill lands or the
+  load fails, so nothing the reader typed is overwritten.
+
 ## v0.11.0 - 2026-08-16
 
 - **The default look comes from `DESIGN.md`.** The palette, type scale and
