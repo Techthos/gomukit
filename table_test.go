@@ -187,6 +187,29 @@ func TestTableConfigLoadTool(t *testing.T) {
 	}
 }
 
+func TestTableConfigEmptyImmediate(t *testing.T) {
+	tbl := canonicalTable()
+	tbl.Empty = EmptyState{Title: "Nothing here", Immediate: true}
+	b, err := json.Marshal(tbl.config())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(b), `"immediate":true`) {
+		t.Errorf("config island missing the immediate flag: %s", b)
+	}
+
+	// Omitted by default, which is what leaves the runtime free to wait for
+	// data before it claims the table is empty.
+	tbl.Empty.Immediate = false
+	b2, err := json.Marshal(tbl.config())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(b2), "immediate") {
+		t.Errorf("immediate present when unset: %s", b2)
+	}
+}
+
 func TestTableToolMetaAndDescriptor(t *testing.T) {
 	tbl := canonicalTable()
 	meta, err := json.Marshal(tbl.ToolMeta())

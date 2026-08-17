@@ -27,6 +27,22 @@ Widgets read runtime data from the tool result's `structuredContent`:
 `gomukit.RowsOf(slice)` converts typed Go slices to row maps (honors json
 tags).
 
+### Loading is not empty
+
+A widget rendered without an `InitialData` snapshot has no data *yet*, which is
+not the same as having none. It shows a loading skeleton and reaches its empty
+state only once data actually resolves: a `ui/notifications/tool-result`, a
+`LoadTool` response (success or failure), a cancelled call, a handshake nobody
+answered, or a 1.5s wait for a host that pushes none of these. An empty
+snapshot (`InitialData: map[string]any{"rows": []}`) counts as resolved, so a
+widget you know is empty says so immediately; `Empty.Immediate` does the same
+without a snapshot.
+
+`Form` gets no skeleton — its fields are structure, not data — but a form with a
+`LoadTool` keeps its controls disabled until the prefill lands or the load
+fails, so nothing typed is overwritten. A form without one is typeable from the
+first paint.
+
 ## Table
 
 ```go

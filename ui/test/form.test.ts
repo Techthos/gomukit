@@ -270,6 +270,40 @@ describe("form behavior", () => {
     });
     await flush();
     expect(host.received(M.toolsCall)).toHaveLength(0);
+    // The wait ends with the handshake: a form nobody will prefill stays usable.
+    expect((root.querySelector("#f-name") as HTMLInputElement).disabled).toBe(false);
+  });
+
+  it("locks the fields while prefill is still coming, then releases them", async () => {
+    const root = shell();
+    host.onToolCall = () => ({ structuredContent: { values: { name: "Grace" } } });
+    mountForm({
+      root,
+      config: config({ loadTool: "get_user" }),
+      initialData: null,
+      bridge,
+      ready: Promise.resolve(true),
+    });
+    const name = root.querySelector("#f-name") as HTMLInputElement;
+    expect(name.disabled).toBe(true);
+    expect(root.querySelector<HTMLElement>("[data-gomu-status]")?.className).toContain(
+      "gomu-status--loading",
+    );
+    await flush();
+    expect(name.disabled).toBe(false);
+    expect(name.value).toBe("Grace");
+  });
+
+  it("leaves a form with no load tool typeable from the first paint", () => {
+    const root = shell();
+    mountForm({
+      root,
+      config: config(),
+      initialData: null,
+      bridge,
+      ready: Promise.resolve(true),
+    });
+    expect((root.querySelector("#f-name") as HTMLInputElement).disabled).toBe(false);
   });
   it("upgrades a date range field and submits both ends as flat arguments", async () => {
     const root = shell();

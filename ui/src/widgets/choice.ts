@@ -11,6 +11,7 @@ import type { MountContext } from "../index";
 import { HOST_CONTEXT_EVENT } from "../host";
 import { Row, rowsFrom } from "../data";
 import { checkbox, clear, delegate, h } from "../dom";
+import { awaitData, SKELETON_ROWS, skeletonLines } from "../loading";
 import { CallToolResult, M } from "../protocol";
 import { errorText, textOf } from "../status";
 import { ActionCfg, resolveArgs } from "./card-common";
@@ -87,6 +88,10 @@ export function mountChoice(ctx: MountContext): void {
 	const max = cfg.max && cfg.max > 0 ? cfg.max : 0;
 
 	let options: OptionCfg[] = optionsFrom(ctx.initialData, cfg.optionsKey) ?? cfg.options ?? [];
+	// False until the option list has actually resolved. An unloaded widget
+	// shows a skeleton: "no options yet" and "nothing to choose from" are
+	// different answers, and only the second one is the empty state's to give.
+	let loaded = options.length > 0;
 	let row: Row | null = rowsFrom(ctx.initialData, cfg.rowsKey)[0] ?? null;
 	let chosen = new Set<string>();
 	// The option the description block is about. Follows the last option the
@@ -240,9 +245,21 @@ export function mountChoice(ctx: MountContext): void {
 		const hadFocus = listEl.contains(document.activeElement);
 
 		clear(listEl);
-		for (const [i, opt] of options.entries()) listEl.append(optionNode(opt, i));
-		listEl.hidden = options.length === 0;
-		if (emptyEl) emptyEl.hidden = options.length > 0;
+		if (loaded) {
+			for (const [i, opt] of options.entries()) listEl.append(optionNode(opt, i));
+		} else {
+			for (let i = 0; i < SKELETON_ROWS; i++) {
+				listEl.append(
+					h("div", { class: "gomu-choice-option gomu-choice-option--skeleton", "aria-hidden": "true" },
+						skeletonLines(2),
+					),
+				);
+			}
+		}
+		listEl.hidden = loaded && options.length === 0;
+		// Never while pending: "nothing to choose from" is a claim the widget
+		// cannot make before it has been given a list.
+		if (emptyEl) emptyEl.hidden = !loaded || options.length > 0;
 		if (cardEl) {
 			cardEl.classList.remove("gomu-choice--auto", "gomu-choice--split", "gomu-choice--stacked");
 			cardEl.classList.add(`gomu-choice--${layout}`);
@@ -419,6 +436,9 @@ export function mountChoice(ctx: MountContext): void {
 	function applyData(data: CallToolResult | { structuredContent?: unknown }): void {
 		const sc = (data as CallToolResult).structuredContent;
 		if (!sc || typeof sc !== "object") return;
+		// Any answer from the host ends the wait, including one that names no
+		// options: that is the list, and it is empty.
+		loaded = true;
 		const content = sc as Record<string, unknown>;
 		if (cfg.rowsKey in content) {
 			row = rowsFrom(content, cfg.rowsKey)[0] ?? null;
@@ -470,6 +490,8 @@ export function mountChoice(ctx: MountContext): void {
 	});
 	bridge.on(M.toolCancelled, () => {
 		if (phase === "working") phase = "deciding";
+		// The call this widget was waiting on is not coming back.
+		loaded = true;
 		renderOptions();
 		syncControls();
 		showStatus("", "");
@@ -482,6 +504,7 @@ export function mountChoice(ctx: MountContext): void {
 	resetSelection();
 	measureLayout();
 	render();
+	if (!loaded) showStatus("loading", "Loading…");
 
 	// The auto layout is a running measurement, not a boot-time one: the host
 	// resizes the frame as the conversation pane changes.
@@ -501,11 +524,26 @@ export function mountChoice(ctx: MountContext): void {
 					if (phase === "deciding") showStatus("", "");
 				},
 				() => {
+					// A load that failed still answers the question the skeleton asks.
+					stopWaiting();
 					if (phase === "deciding") showStatus("", "");
 				},
 			);
 		});
 	}
+
+	// Bounded wait for options the host may push on its own (a tool-result
+	// notification): without it a widget with no authored options and no load
+	// tool would hold its skeleton forever against a host that never sends one.
+	// Also ends the wait when no host answered at all, load tool or not.
+	function stopWaiting(): void {
+		if (loaded) return;
+		loaded = true;
+		renderOptions();
+		syncControls();
+		if (phase === "deciding") showStatus("", "");
+	}
+	if (!loaded) awaitData(ctx.ready, !!cfg.loadTool, stopWaiting);
 }
 
 /**

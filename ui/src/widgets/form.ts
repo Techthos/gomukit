@@ -3,6 +3,7 @@
 import type { MountContext } from "../index";
 import { enhanceDateFields, refreshDateFields, type CalendarCfg } from "../calendar";
 import { refreshDropdowns } from "../dropdown";
+import { awaitData, seeded } from "../loading";
 import { CallToolResult, M } from "../protocol";
 import { errorText, textOf } from "../status";
 
@@ -267,6 +268,24 @@ export function mountForm(ctx: MountContext): void {
 		applyResult({ structuredContent: ctx.initialData }, false);
 	}
 
+	// A form's structure is not its data, so it gets no skeleton: the fields
+	// are real and correct from the first paint. What it can be missing is
+	// prefill, and only a form that names a load tool is waiting for any — a
+	// create form must stay typeable, not sit disabled waiting for values that
+	// were never coming. While the wait is on, the controls are locked, so
+	// nothing the reader types is overwritten when the values land.
+	let loaded = !cfg.loadTool || seeded(ctx.initialData, cfg.prefillKey);
+	function stopWaiting(): void {
+		if (loaded) return;
+		loaded = true;
+		setBusy(false);
+		showStatus("", "");
+	}
+	if (!loaded) {
+		setBusy(true);
+		showStatus("loading", "Loading…");
+	}
+
 	// Load-time hydration: once a host is connected, fetch fresh prefill and
 	// replace the baked snapshot, so a reloaded form shows current values
 	// instead of the state frozen at render time.
@@ -274,10 +293,23 @@ export function mountForm(ctx: MountContext): void {
 		void ctx.ready?.then((ok) => {
 			if (!ok) return;
 			showStatus("loading", "Loading…");
+			setBusy(true);
 			bridge.callTool(cfg.loadTool as string, cfg.loadArgs ?? {}).then(
-				(res) => applyResult(res, false),
-				() => showStatus("", ""),
+				(res) => {
+					loaded = true;
+					setBusy(false);
+					applyResult(res, false);
+				},
+				() => {
+					// A load that failed still ends the wait: a blank form the
+					// reader can use beats a locked one they cannot.
+					stopWaiting();
+				},
 			);
 		});
 	}
+
+	// Ends the wait when no host answered the handshake, so a form previewed
+	// without a host is not left disabled forever.
+	if (!loaded) awaitData(ctx.ready, !!cfg.loadTool, stopWaiting);
 }

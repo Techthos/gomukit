@@ -141,10 +141,21 @@ type SortSpec struct {   // default sort order for a table
 }
 
 type EmptyState struct { // no-data message (Table.Empty)
-    Title string `json:"title,omitempty"` // defaults to "No data" when rendered
-    Body  string `json:"body,omitempty"`
+    Title     string `json:"title,omitempty"` // defaults to "No data" when rendered
+    Body      string `json:"body,omitempty"`
+    Immediate bool   `json:"immediate,omitempty"` // show it on first paint, skip the skeleton
 }
 ```
+
+**Loading vs. empty.** A widget rendered without `InitialData` is *not loaded yet*, not
+empty. It shows a loading skeleton and reaches its empty state only once data actually
+resolves: a `ui/notifications/tool-result`, a `LoadTool` response (success or failure),
+a cancelled call, a handshake that no host answered, or a 1.5s wait for a host that
+pushes none of these. Set `Empty.Immediate` for a widget that is genuinely empty at
+render time with no data coming, to assert the empty state on first paint instead.
+`Form` has no skeleton — its fields are structure, not data — but a form with a
+`LoadTool` keeps its controls disabled until the prefill lands or the load fails, so
+nothing typed is overwritten.
 
 ### 3.3 `Table`
 

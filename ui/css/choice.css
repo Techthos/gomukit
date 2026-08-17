@@ -286,3 +286,9 @@
     transition: none;
   }
 }
+
+/* Placeholder options: the tile chrome without the mark, and nothing to click. */
+.gomu-choice-option--skeleton {
+  display: block;
+  cursor: default;
+}

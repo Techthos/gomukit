@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Bridge } from "../src/bridge";
+import { LOAD_GRACE_MS } from "../src/loading";
 import { mountTable } from "../src/widgets/table";
 import { M } from "../src/protocol";
 import { FakeHost, flush } from "./fake-host";
@@ -171,6 +172,94 @@ describe("table behavior", () => {
     const root = shell();
     mountTable({ root, config: config(), initialData: null, bridge });
     expect(root.querySelectorAll("tbody tr")).toHaveLength(0);
+    expect(root.querySelector<HTMLElement>("[data-gomu-empty]")?.hidden).toBe(false);
+  });
+
+  it("shows a skeleton, not the empty state, while data has not resolved", () => {
+    const root = shell();
+    mountTable({
+      root,
+      config: config(),
+      initialData: null,
+      bridge,
+      // A host answered, so rows may still be pushed: the table waits.
+      ready: Promise.resolve(true),
+    });
+    expect(root.querySelectorAll("tbody .gomu-skeleton").length).toBeGreaterThan(0);
+    expect(root.querySelector<HTMLElement>("[data-gomu-empty]")?.hidden).toBe(true);
+    const status = root.querySelector<HTMLElement>("[data-gomu-status]")!;
+    expect(status.hidden).toBe(false);
+    expect(status.className).toContain("gomu-status--loading");
+  });
+
+  it("replaces the skeleton with the empty state once a result carries no rows", async () => {
+    const root = shell();
+    mountTable({
+      root,
+      config: config(),
+      initialData: null,
+      bridge,
+      ready: Promise.resolve(true),
+    });
+    host.pushToolResult({ structuredContent: { rows: [] } });
+    await flush();
+    expect(root.querySelectorAll("tbody .gomu-skeleton")).toHaveLength(0);
+    expect(root.querySelector<HTMLElement>("[data-gomu-empty]")?.hidden).toBe(false);
+  });
+
+  it("stops waiting once the grace window passes with nothing pushed", async () => {
+    const root = shell();
+    mountTable({
+      root,
+      config: config(),
+      initialData: null,
+      bridge,
+      ready: Promise.resolve(true),
+    });
+    expect(root.querySelectorAll("tbody .gomu-skeleton").length).toBeGreaterThan(0);
+    await new Promise((r) => setTimeout(r, LOAD_GRACE_MS + 50));
+    expect(root.querySelectorAll("tbody .gomu-skeleton")).toHaveLength(0);
+    expect(root.querySelector<HTMLElement>("[data-gomu-empty]")?.hidden).toBe(false);
+  });
+
+  it("stops waiting when a load tool finds no host to call", async () => {
+    const root = shell();
+    mountTable({
+      root,
+      config: config({ loadTool: "list_users" }),
+      initialData: null,
+      bridge,
+      ready: Promise.resolve(false),
+    });
+    await flush();
+    expect(host.received(M.toolsCall)).toHaveLength(0);
+    expect(root.querySelectorAll("tbody .gomu-skeleton")).toHaveLength(0);
+    expect(root.querySelector<HTMLElement>("[data-gomu-empty]")?.hidden).toBe(false);
+  });
+
+  it("asserts emptiness on first paint with empty.immediate", () => {
+    const root = shell();
+    mountTable({
+      root,
+      config: config({ empty: { immediate: true } }),
+      initialData: null,
+      bridge,
+      ready: Promise.resolve(true),
+    });
+    expect(root.querySelectorAll("tbody .gomu-skeleton")).toHaveLength(0);
+    expect(root.querySelector<HTMLElement>("[data-gomu-empty]")?.hidden).toBe(false);
+  });
+
+  it("treats an empty baked snapshot as loaded", () => {
+    const root = shell();
+    mountTable({
+      root,
+      config: config(),
+      initialData: { rows: [] },
+      bridge,
+      ready: Promise.resolve(true),
+    });
+    expect(root.querySelectorAll("tbody .gomu-skeleton")).toHaveLength(0);
     expect(root.querySelector<HTMLElement>("[data-gomu-empty]")?.hidden).toBe(false);
   });
 

@@ -289,6 +289,44 @@ body {
   .gomu-input {
     transition: none;
   }
+
+  .gomu-skeleton {
+    animation: none;
+  }
+}
+
+/* Skeleton: what a widget stands in while its data has not resolved yet. A
+ * widget with no data is not the same as a widget with none to come, and the
+ * empty state below is the second answer only — so the bars hold the shape of
+ * the rows until the real ones arrive. */
+.gomu-skeleton {
+  display: block;
+  height: 0.8em;
+  border-radius: var(--gomu-radius-s);
+  background: var(--gomu-color-border);
+  animation: gomu-skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.gomu-skeleton-lines {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--gomu-space-unit) * 2);
+}
+
+/* Uneven widths, so a run of bars reads as lines of text rather than as a
+ * stack of identical blocks. */
+.gomu-skeleton-lines > .gomu-skeleton {
+  width: 85%;
+}
+
+.gomu-skeleton-lines > .gomu-skeleton:first-child {
+  width: 60%;
+}
+
+@keyframes gomu-skeleton-pulse {
+  50% {
+    opacity: 0.4;
+  }
 }
 
 .gomu-empty {

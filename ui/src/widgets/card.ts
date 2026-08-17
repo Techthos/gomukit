@@ -6,6 +6,7 @@ import type { MountContext } from "../index";
 import { HOST_CONTEXT_EVENT } from "../host";
 import { Row, rowsFrom } from "../data";
 import { clear } from "../dom";
+import { awaitData, seeded, skeletonCard } from "../loading";
 import { confirmAction } from "../confirm-modal";
 import { CallToolResult, M } from "../protocol";
 import { errorText, textOf } from "../status";
@@ -32,7 +33,7 @@ interface CardCfg {
 	rowsKey: string;
 	rowId: string;
 	card: CardTemplateCfg;
-	empty?: { title?: string; body?: string };
+	empty?: { title?: string; body?: string; immediate?: boolean };
 	loadTool?: string;
 	loadArgs?: Record<string, unknown>;
 }
@@ -53,6 +54,10 @@ export function mountCard(ctx: MountContext): void {
 	const rowID = (row: Row): string => String(row[cfg.rowId] ?? "");
 
 	let row: Row | null = rowsFrom(ctx.initialData, cfg.rowsKey)[0] ?? null;
+	// False until the record has actually resolved. An unloaded card shows a
+	// skeleton: "no record yet" and "no such record" are different answers, and
+	// only the second one is the empty state's to give.
+	let loaded = seeded(ctx.initialData, cfg.rowsKey) || !!cfg.empty?.immediate;
 	let busy = false;
 	let statusTimer: ReturnType<typeof setTimeout> | undefined;
 	// The card is rebuilt on every state change, so what the reader has put
@@ -71,17 +76,25 @@ export function mountCard(ctx: MountContext): void {
 		// The dropdowns of the card being replaced own panels outside it.
 		releaseDropdowns(host);
 		clear(host);
-		if (row) {
+		if (!loaded) {
+			host.append(skeletonCard());
+		} else if (row) {
 			host.append(renderCard(cfg.card, row, { id: rowID(row), busy, values: inputs }));
 			// Selects become dropdowns only now: a panel is placed against the
 			// widget root, which the card could not reach while detached.
 			if (asks) enhanceDescriptionInputs(host);
 		}
-		if (emptyEl) emptyEl.hidden = !!row;
+		// Never while pending: "no record" is a claim the card cannot make
+		// before it has been given one.
+		if (emptyEl) emptyEl.hidden = !loaded || !!row;
+		if (!loaded) showStatus("loading", "Loading…");
 	}
 
 	function applyResult(res: CallToolResult): void {
 		busy = false;
+		// Any answer from the host ends the wait, including one that carries no
+		// record: that is the card's data, and there is none.
+		loaded = true;
 		if (res.structuredContent && cfg.rowsKey in res.structuredContent) {
 			row = rowsFrom(res.structuredContent, cfg.rowsKey)[0] ?? null;
 		}
@@ -180,6 +193,8 @@ export function mountCard(ctx: MountContext): void {
 	bridge.on(M.toolResult, (params) => applyResult((params ?? {}) as CallToolResult));
 	bridge.on(M.toolCancelled, () => {
 		busy = false;
+		// The call this card was waiting on is not coming back.
+		loaded = true;
 		render();
 		showStatus("", "");
 	});
@@ -198,6 +213,7 @@ export function mountCard(ctx: MountContext): void {
 			bridge.callTool(cfg.loadTool as string, cfg.loadArgs ?? {}).then(
 				(res) => {
 					busy = false;
+					loaded = true;
 					if (res.structuredContent && cfg.rowsKey in res.structuredContent) {
 						row = rowsFrom(res.structuredContent, cfg.rowsKey)[0] ?? null;
 					}
@@ -206,10 +222,25 @@ export function mountCard(ctx: MountContext): void {
 				},
 				() => {
 					busy = false;
+					// A load that failed still answers the question the skeleton asks.
+					loaded = true;
 					render();
 					showStatus("", "");
 				},
 			);
+		});
+	}
+
+	// Bounded wait for a record the host may push on its own (a tool-result
+	// notification): without it a card with no snapshot and no load tool would
+	// hold its skeleton forever against a host that never sends one. Also ends
+	// the wait when no host answered at all, load tool or not.
+	if (!loaded) {
+		awaitData(ctx.ready, !!cfg.loadTool, () => {
+			if (loaded) return;
+			loaded = true;
+			render();
+			showStatus("", "");
 		});
 	}
 }

@@ -6,6 +6,7 @@ import type { MountContext } from "../index";
 import { HOST_CONTEXT_EVENT } from "../host";
 import { Row, rowsFrom } from "../data";
 import { clear, delegate, h } from "../dom";
+import { awaitData, seeded, SKELETON_ROWS, skeletonCard } from "../loading";
 import { confirmAction } from "../confirm-modal";
 import { refreshDropdown, releaseDropdowns } from "../dropdown";
 import { CallToolResult, M } from "../protocol";
@@ -50,12 +51,16 @@ interface CardListCfg {
 	sort?: { key: string; label: string }[];
 	defaultSort?: SortSpec;
 	selection?: { bulk: ActionCfg[] };
-	empty?: { title?: string; body?: string };
+	empty?: { title?: string; body?: string; immediate?: boolean };
 	loadTool?: string;
 	loadArgs?: Record<string, unknown>;
 }
 
 interface CardListState {
+	// False until data has actually resolved. An unloaded strip shows skeleton
+	// cards: "no records yet" and "no records at all" are different answers,
+	// and only the second one is the empty state's to give.
+	loaded: boolean;
 	rows: Row[];
 	sort: SortSpec | null;
 	filter: string;
@@ -103,6 +108,7 @@ export function mountCardList(ctx: MountContext): void {
 	const rowID = (row: Row): string => String(row[cfg.rowId] ?? "");
 
 	const store = new Store<CardListState>({
+		loaded: seeded(ctx.initialData, cfg.rowsKey) || !!cfg.empty?.immediate,
 		rows: rowsFrom(ctx.initialData, cfg.rowsKey),
 		sort: cfg.defaultSort ?? null,
 		filter: "",
@@ -155,7 +161,9 @@ export function mountCardList(ctx: MountContext): void {
 	// --- actions ---
 
 	function applyResult(res: CallToolResult): void {
-		const patch: Partial<CardListState> = { status: "idle" };
+		// Any answer from the host ends the wait, including one that carries no
+		// records: that is the list's data, and it is empty.
+		const patch: Partial<CardListState> = { status: "idle", loaded: true };
 		if (res.structuredContent && cfg.rowsKey in res.structuredContent) {
 			patch.rows = rowsFrom(res.structuredContent, cfg.rowsKey);
 			patch.selected = [];
@@ -285,6 +293,7 @@ export function mountCardList(ctx: MountContext): void {
 	function render(s: CardListState): void {
 		const { pageRows, total } = visible(s);
 		const busy = s.status === "loading";
+		const pending = !s.loaded;
 		const selected = new Set(s.selected);
 
 		// The strip is rebuilt wholesale on every state change — including one
@@ -302,6 +311,12 @@ export function mountCardList(ctx: MountContext): void {
 		// The dropdowns of the cards being replaced own panels outside the strip.
 		releaseDropdowns(strip);
 		clear(strip);
+		if (pending) {
+			const n = cfg.pageSize > 0 ? Math.min(cfg.pageSize, SKELETON_ROWS) : SKELETON_ROWS;
+			for (let i = 0; i < n; i++) strip.append(skeletonCard());
+		}
+		// Nothing to iterate while pending: records only ever arrive together
+		// with the flag that ends the wait.
 		for (const row of pageRows) {
 			strip.append(
 				renderCard(cfg.card, row, {
@@ -328,9 +343,10 @@ export function mountCardList(ctx: MountContext): void {
 			refreshDropdown(sortSelectEl);
 		}
 
-		// empty state
+		// empty state — never while pending: "no records" is a claim the list
+		// cannot make before it has been given any.
 		if (emptyEl) {
-			emptyEl.hidden = total > 0;
+			emptyEl.hidden = pending || total > 0;
 			if (emptyTitleEl) {
 				emptyTitleEl.textContent =
 					total === 0 && s.rows.length > 0 ? "No matching cards" : emptyTitleDefault;
@@ -342,7 +358,8 @@ export function mountCardList(ctx: MountContext): void {
 		if (paginationEl) {
 			// A single page normally means no bar — but with a page-size chooser
 			// the bar is also the way back to a smaller page, so it stays.
-			paginationEl.hidden = !!cfg.loadMore || s.pageSize <= 0 || (pages <= 1 && !pageSizeEl);
+			paginationEl.hidden =
+				pending || !!cfg.loadMore || s.pageSize <= 0 || (pages <= 1 && !pageSizeEl);
 			if (pageInfoEl) {
 				const from = total === 0 ? 0 : s.page * s.pageSize + 1;
 				const to = Math.min((s.page + 1) * s.pageSize, total);
@@ -371,13 +388,13 @@ export function mountCardList(ctx: MountContext): void {
 			}
 		}
 
-		// status
+		// status — the skeleton says something is coming, the bar says what.
 		if (statusEl) {
-			const msg = s.statusMsg ?? "";
+			const msg = s.statusMsg ?? (pending ? "Loading…" : "");
 			statusEl.hidden = msg === "";
 			statusEl.textContent = msg;
 			statusEl.className = "gomu-status";
-			if (busy) statusEl.className += " gomu-status--loading";
+			if (busy || pending) statusEl.className += " gomu-status--loading";
 			else if (s.statusKind) statusEl.className += ` gomu-status--${s.statusKind}`;
 		}
 
@@ -595,7 +612,8 @@ export function mountCardList(ctx: MountContext): void {
 		applyResult((params ?? {}) as CallToolResult);
 	});
 	bridge.on(M.toolCancelled, () => {
-		store.set({ status: "idle", statusKind: undefined, statusMsg: undefined });
+		// The call this list was waiting on is not coming back.
+		store.set({ status: "idle", loaded: true, statusKind: undefined, statusMsg: undefined });
 	});
 
 	// Re-render when a host context lands: Intl formatting depends on the
@@ -613,6 +631,7 @@ export function mountCardList(ctx: MountContext): void {
 			const res = await bridge.callTool(cfg.loadTool as string, cfg.loadArgs ?? {});
 			const patch: Partial<CardListState> = {
 				status: "idle",
+				loaded: true,
 				statusKind: undefined,
 				statusMsg: undefined,
 			};
@@ -622,12 +641,21 @@ export function mountCardList(ctx: MountContext): void {
 			}
 			store.set(patch);
 		} catch {
-			store.set({ status: "idle", statusKind: undefined, statusMsg: undefined });
+			// A load that failed still answers the question the skeleton asks.
+			store.set({ status: "idle", loaded: true, statusKind: undefined, statusMsg: undefined });
 		}
 	}
 	if (cfg.loadTool) {
 		void ctx.ready?.then((ok) => {
 			if (ok) void hydrate();
 		});
+	}
+
+	// Bounded wait for data the host may push on its own (a tool-result
+	// notification): without it a list with no snapshot and no load tool would
+	// hold its skeleton forever against a host that never sends one. Also ends
+	// the wait when no host answered at all, load tool or not.
+	if (!store.get().loaded) {
+		awaitData(ctx.ready, !!cfg.loadTool, () => store.set({ loaded: true }));
 	}
 }

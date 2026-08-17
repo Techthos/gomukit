@@ -43,4 +43,11 @@ type SortSpec struct {
 type EmptyState struct {
 	Title string `json:"title,omitempty"`
 	Body  string `json:"body,omitempty"`
+	// Immediate shows the empty state on first paint. By default a widget
+	// rendered without an InitialData snapshot is treated as not loaded yet:
+	// it shows a loading skeleton and reaches the empty state only once data
+	// has resolved — from a tool result, a LoadTool call, or a short wait for
+	// a host that pushes neither. Set Immediate for a widget that is genuinely
+	// empty at render time and has no data coming.
+	Immediate bool `json:"immediate,omitempty"`
 }

@@ -292,3 +292,9 @@ th[aria-sort="descending"] .gomu-sort-btn::after {
     margin-inline: auto;
   }
 }
+
+/* Placeholder cells stop short of the cell edge, so a skeleton run reads as
+ * data on its way rather than as a filled grid. */
+.gomu-table td > .gomu-skeleton {
+  width: 70%;
+}

@@ -424,6 +424,38 @@ describe("cardlist behavior", () => {
 		expect(root.querySelector<HTMLElement>("[data-gomu-empty]")?.hidden).toBe(false);
 	});
 
+	it("shows skeleton cards, not the empty state, while data has not resolved", () => {
+		const root = listShell();
+		mountCardList({
+			root,
+			config: listConfig(),
+			initialData: null,
+			bridge,
+			// A host answered, so records may still be pushed: the list waits.
+			ready: Promise.resolve(true),
+		});
+		expect(root.querySelectorAll(".gomu-card-item--skeleton").length).toBeGreaterThan(0);
+		expect(root.querySelector<HTMLElement>("[data-gomu-empty]")?.hidden).toBe(true);
+		expect(root.querySelector<HTMLElement>("[data-gomu-status]")?.className).toContain(
+			"gomu-status--loading",
+		);
+	});
+
+	it("replaces the skeleton with the empty state once a result carries no rows", async () => {
+		const root = listShell();
+		mountCardList({
+			root,
+			config: listConfig(),
+			initialData: null,
+			bridge,
+			ready: Promise.resolve(true),
+		});
+		host.pushToolResult({ structuredContent: { rows: [] } });
+		await flush();
+		expect(root.querySelectorAll(".gomu-card-item--skeleton")).toHaveLength(0);
+		expect(root.querySelector<HTMLElement>("[data-gomu-empty]")?.hidden).toBe(false);
+	});
+
 	it("renders badge and link fields", () => {
 		const root = listShell();
 		mountCardList({ root, config: listConfig(), initialData: { rows: [ROWS[0]] }, bridge });
@@ -676,6 +708,38 @@ describe("card behavior", () => {
 		const root = cardShell();
 		mountCard({ root, config: cardConfig(), initialData: null, bridge });
 		expect(root.querySelectorAll(".gomu-card-item")).toHaveLength(0);
+		expect(root.querySelector<HTMLElement>("[data-gomu-empty]")?.hidden).toBe(false);
+	});
+
+	it("shows a skeleton, not the empty state, while the record has not resolved", () => {
+		const root = cardShell();
+		mountCard({
+			root,
+			config: cardConfig(),
+			initialData: null,
+			bridge,
+			// A host answered, so a record may still be pushed: the card waits.
+			ready: Promise.resolve(true),
+		});
+		expect(root.querySelectorAll(".gomu-card-item--skeleton")).toHaveLength(1);
+		expect(root.querySelector<HTMLElement>("[data-gomu-empty]")?.hidden).toBe(true);
+		expect(root.querySelector<HTMLElement>("[data-gomu-status]")?.className).toContain(
+			"gomu-status--loading",
+		);
+	});
+
+	it("replaces the skeleton with the empty state once a result carries no record", async () => {
+		const root = cardShell();
+		mountCard({
+			root,
+			config: cardConfig(),
+			initialData: null,
+			bridge,
+			ready: Promise.resolve(true),
+		});
+		host.pushToolResult({ structuredContent: { rows: [] } });
+		await flush();
+		expect(root.querySelectorAll(".gomu-card-item--skeleton")).toHaveLength(0);
 		expect(root.querySelector<HTMLElement>("[data-gomu-empty]")?.hidden).toBe(false);
 	});
 

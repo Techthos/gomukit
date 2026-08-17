@@ -7,6 +7,7 @@ import { Row, rowsFrom } from "../data";
 import { checkbox, clear, delegate, h } from "../dom";
 import { refreshDropdown } from "../dropdown";
 import { formatCell } from "../format";
+import { awaitData, seeded, SKELETON_ROWS, skeletonBar } from "../loading";
 import { anyVisible, type RowPredicateCfg, visibleActions } from "../predicate";
 import { CallToolResult, M } from "../protocol";
 import { errorText, textOf } from "../status";
@@ -63,12 +64,16 @@ interface TableCfg {
 	loadMore?: boolean;
 	defaultSort?: SortSpec;
 	selection?: { bulk: ActionCfg[] };
-	empty?: { title?: string; body?: string };
+	empty?: { title?: string; body?: string; immediate?: boolean };
 	loadTool?: string;
 	loadArgs?: Record<string, unknown>;
 }
 
 interface TableState {
+	// False until data has actually resolved. An unloaded table shows a
+	// skeleton: "no rows yet" and "no rows at all" are different answers, and
+	// only the second one is the empty state's to give.
+	loaded: boolean;
 	rows: Row[];
 	sort: SortSpec | null;
 	filter: string;
@@ -159,6 +164,7 @@ export function mountTable(ctx: MountContext): void {
 	const rowID = (row: Row): string => String(row[cfg.rowId] ?? "");
 
 	const store = new Store<TableState>({
+		loaded: seeded(ctx.initialData, cfg.rowsKey) || !!cfg.empty?.immediate,
 		rows: rowsFrom(ctx.initialData, cfg.rowsKey),
 		sort: cfg.defaultSort ?? null,
 		filter: "",
@@ -206,7 +212,9 @@ export function mountTable(ctx: MountContext): void {
 	}
 
 	function applyResult(res: CallToolResult): void {
-		const patch: Partial<TableState> = { status: "idle" };
+		// Any answer from the host ends the wait, including one that carries no
+		// rows: that is the table's data, and it is empty.
+		const patch: Partial<TableState> = { status: "idle", loaded: true };
 		if (res.structuredContent && cfg.rowsKey in res.structuredContent) {
 			patch.rows = rowsFrom(res.structuredContent, cfg.rowsKey);
 			patch.selected = [];
@@ -339,9 +347,19 @@ export function mountTable(ctx: MountContext): void {
 		}
 	}
 
+	/** Placeholder rows, in the real row's shape so the columns keep their
+	 * widths and the widget keeps its height when the data lands. */
+	function skeletonRow(): HTMLElement {
+		const tr = h("tr", { role: "row", "aria-hidden": "true" });
+		if (cfg.selection) tr.append(h("td", { role: "cell", class: "gomu-td-select" }));
+		for (const col of cfg.columns) tr.append(h("td", cellAttrs(col), skeletonBar()));
+		return tr;
+	}
+
 	function render(s: TableState): void {
 		const { pageRows, total } = visible(s);
 		const busy = s.status === "loading";
+		const pending = !s.loaded;
 		const selected = new Set(s.selected);
 
 		// An open menu belongs to a trigger that is about to be replaced, and
@@ -350,6 +368,12 @@ export function mountTable(ctx: MountContext): void {
 
 		// rows
 		clear(tbody);
+		if (pending) {
+			const n = cfg.pageSize > 0 ? Math.min(cfg.pageSize, SKELETON_ROWS) : SKELETON_ROWS;
+			for (let i = 0; i < n; i++) tbody.append(skeletonRow());
+		}
+		// Nothing to iterate while pending: rows only ever arrive together with
+		// the flag that ends the wait.
 		for (const row of pageRows) {
 			const tr = h("tr", { role: "row", "data-gomu-row-id": rowID(row) });
 			if (cfg.selection) {
@@ -377,9 +401,10 @@ export function mountTable(ctx: MountContext): void {
 			refreshDropdown(sortSelectEl);
 		}
 
-		// empty state
+		// empty state — never while pending: "no rows" is a claim the table
+		// cannot make before it has been given any.
 		if (emptyEl) {
-			emptyEl.hidden = total > 0;
+			emptyEl.hidden = pending || total > 0;
 			if (emptyTitleEl) {
 				emptyTitleEl.textContent =
 					total === 0 && s.rows.length > 0 ? "No matching rows" : emptyTitleDefault;
@@ -391,7 +416,7 @@ export function mountTable(ctx: MountContext): void {
 		if (paginationEl) {
 			// A single page normally means no bar — but with a page-size chooser
 			// the bar is also the way back to a smaller page, so it stays.
-			paginationEl.hidden = s.pageSize <= 0 || (pages <= 1 && !pageSizeEl);
+			paginationEl.hidden = pending || s.pageSize <= 0 || (pages <= 1 && !pageSizeEl);
 			if (pageInfoEl) {
 				const from = total === 0 ? 0 : s.page * s.pageSize + 1;
 				const to = Math.min((s.page + 1) * s.pageSize, total);
@@ -410,7 +435,7 @@ export function mountTable(ctx: MountContext): void {
 
 		// load more
 		if (moreEl) {
-			moreEl.hidden = pageRows.length >= total;
+			moreEl.hidden = pending || pageRows.length >= total;
 			if (moreCountEl) moreCountEl.textContent = `${pageRows.length} of ${total}`;
 			if (moreBtnEl) moreBtnEl.disabled = busy;
 		}
@@ -429,13 +454,13 @@ export function mountTable(ctx: MountContext): void {
 			if (bulkMenuEl) bulkMenuEl.disabled = busy;
 		}
 
-		// status
+		// status — the skeleton says something is coming, the bar says what.
 		if (statusEl) {
-			const msg = s.statusMsg ?? "";
+			const msg = s.statusMsg ?? (pending ? "Loading…" : "");
 			statusEl.hidden = msg === "";
 			statusEl.textContent = msg;
 			statusEl.className = "gomu-status";
-			if (busy) statusEl.className += " gomu-status--loading";
+			if (busy || pending) statusEl.className += " gomu-status--loading";
 			else if (s.statusKind) statusEl.className += ` gomu-status--${s.statusKind}`;
 		}
 
@@ -567,7 +592,8 @@ export function mountTable(ctx: MountContext): void {
 		applyResult((params ?? {}) as CallToolResult);
 	});
 	bridge.on(M.toolCancelled, () => {
-		store.set({ status: "idle", statusKind: undefined, statusMsg: undefined });
+		// The call this table was waiting on is not coming back.
+		store.set({ status: "idle", loaded: true, statusKind: undefined, statusMsg: undefined });
 	});
 
 	// Re-render when a host context lands: Intl formatting depends on the
@@ -587,6 +613,7 @@ export function mountTable(ctx: MountContext): void {
 			const res = await bridge.callTool(cfg.loadTool as string, cfg.loadArgs ?? {});
 			const patch: Partial<TableState> = {
 				status: "idle",
+				loaded: true,
 				statusKind: undefined,
 				statusMsg: undefined,
 			};
@@ -596,12 +623,21 @@ export function mountTable(ctx: MountContext): void {
 			}
 			store.set(patch);
 		} catch {
-			store.set({ status: "idle", statusKind: undefined, statusMsg: undefined });
+			// A load that failed still answers the question the skeleton asks.
+			store.set({ status: "idle", loaded: true, statusKind: undefined, statusMsg: undefined });
 		}
 	}
 	if (cfg.loadTool) {
 		void ctx.ready?.then((ok) => {
 			if (ok) void hydrate();
 		});
+	}
+
+	// Bounded wait for data the host may push on its own (a tool-result
+	// notification): without it a table with no snapshot and no load tool would
+	// hold its skeleton forever against a host that never sends one. Also ends
+	// the wait when no host answered at all, load tool or not.
+	if (!store.get().loaded) {
+		awaitData(ctx.ready, !!cfg.loadTool, () => store.set({ loaded: true }));
 	}
 }

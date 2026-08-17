@@ -480,6 +480,36 @@ describe("choice behavior", () => {
 		);
 	});
 
+	it("shows a skeleton, not the empty state, while the options have not resolved", () => {
+		const root = choiceShell();
+		mountChoice({
+			root,
+			config: config({ options: [] }),
+			initialData: null,
+			bridge,
+			// A host answered, so options may still be pushed: the widget waits.
+			ready: Promise.resolve(true),
+		});
+		expect(root.querySelectorAll(".gomu-choice-option--skeleton").length).toBeGreaterThan(0);
+		expect(el(root, "[data-gomu-empty]").hidden).toBe(true);
+		expect(el(root, "[data-gomu-status]").className).toContain("gomu-status--loading");
+	});
+
+	it("replaces the skeleton with the empty state once a result names no options", async () => {
+		const root = choiceShell();
+		mountChoice({
+			root,
+			config: config({ options: [] }),
+			initialData: null,
+			bridge,
+			ready: Promise.resolve(true),
+		});
+		host.pushToolResult({ structuredContent: { options: [] } });
+		await flush();
+		expect(root.querySelectorAll(".gomu-choice-option--skeleton")).toHaveLength(0);
+		expect(el(root, "[data-gomu-empty]").hidden).toBe(false);
+	});
+
 	it("shows the empty state when a result leaves nothing to choose from", async () => {
 		const root = choiceShell();
 		mountChoice({ root, config: config(), initialData: DATA, bridge });
